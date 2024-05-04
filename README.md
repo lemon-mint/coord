@@ -1,6 +1,8 @@
 # Vermittlungsstelle
 
-Vermittlungsstelle: A Unified LLM Interface for All Models
+![Vermittlungsstelle](https://github.com/lemon-mint/vermittlungsstelle/assets/55233766/59c5db0a-f496-4c34-9838-a321bac7a8b4)
+
+Vermittlungsstelle: A Unified Interface for All Models
 
 ## What is Vermittlungsstelle?
 
