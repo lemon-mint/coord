@@ -4,6 +4,7 @@ go 1.22.2
 
 require (
 	cloud.google.com/go/vertexai v0.8.0
+	github.com/lemon-mint/godotenv v1.0.3
 	github.com/sashabaranov/go-openai v1.23.0
 	github.com/valyala/fastjson v1.6.4
 	google.golang.org/api v0.177.0
