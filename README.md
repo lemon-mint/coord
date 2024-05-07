@@ -2,8 +2,6 @@
 
 ![Vermittlungsstelle](https://github.com/lemon-mint/vermittlungsstelle/assets/55233766/59c5db0a-f496-4c34-9838-a321bac7a8b4)
 
-Vermittlungsstelle: A Unified Interface for All Models
-
 ## What is Vermittlungsstelle?
 
 Vermittlungsstelle is an advanced software solution designed to provide a seamless interface for integrating and interacting with various Large Language Models (LLMs). Its primary goal is to simplify the process of working with multiple LLMs by offering a unified platform that abstracts away the complexities of each model's unique interface and requirements.
