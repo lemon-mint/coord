@@ -14,16 +14,6 @@ import (
 
 var _ llm.LLM = (*OpenAIModel)(nil)
 
-type OpenAIModel struct {
-	client *openai.Client
-	config *llm.Config
-	model  string
-}
-
-func (o *OpenAIModel) Name() string {
-	return o.model
-}
-
 func convertContextOpenAI(chat *llm.ChatContext) []openai.ChatCompletionMessage {
 	contents := make([]openai.ChatCompletionMessage, 0, len(chat.Contents)+1)
 
@@ -338,10 +328,6 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	return v
 }
 
-func (g *OpenAIModel) Close() error {
-	return nil
-}
-
 func ptrify[T any](v T) *T {
 	return &v
 }
@@ -349,6 +335,20 @@ func ptrify[T any](v T) *T {
 var defaultOpenAIConfig = &llm.Config{
 	MaxOutputTokens:       ptrify(2048),
 	SafetyFilterThreshold: llm.BlockLowAndAbove,
+}
+
+type OpenAIModel struct {
+	client *openai.Client
+	config *llm.Config
+	model  string
+}
+
+func (o *OpenAIModel) Name() string {
+	return o.model
+}
+
+func (g *OpenAIModel) Close() error {
+	return nil
 }
 
 func NewOpenAIModel(client *openai.Client, model string, config *llm.Config) *OpenAIModel {

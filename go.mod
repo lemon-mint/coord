@@ -5,15 +5,16 @@ go 1.22.2
 require (
 	cloud.google.com/go/vertexai v0.8.0
 	github.com/lemon-mint/godotenv v1.0.3
-	github.com/sashabaranov/go-openai v1.23.0
+	github.com/ollama/ollama v0.1.34
+	github.com/sashabaranov/go-openai v1.23.1
 	github.com/valyala/fastjson v1.6.4
-	google.golang.org/api v0.177.0
+	google.golang.org/api v0.178.0
 )
 
 require (
 	cloud.google.com/go v0.112.2 // indirect
 	cloud.google.com/go/aiplatform v1.67.0 // indirect
-	cloud.google.com/go/auth v0.3.0 // indirect
+	cloud.google.com/go/auth v0.4.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v1.1.8 // indirect
