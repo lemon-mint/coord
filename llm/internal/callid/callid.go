@@ -1,7 +1,7 @@
 package callid
 
 import (
-	"crypto/rand"
+	"github.com/lemon-mint/vermittlungsstelle/internal/randpool"
 )
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -10,10 +10,7 @@ const OpenAIPrefix = "call_"
 
 func OpenAICallID() string {
 	b := make([]byte, 24)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
+	randpool.CSPRNG_RAND(b)
 
 	var sb [5 + 24]byte
 	copy(sb[:5], "call_")
@@ -31,10 +28,7 @@ func AnthropicCallID() string {
 	// toolu_01D7FLrfh4GYq7yT1ULFeyMV
 	// toolu_01A09q90qw90lq917835lq9
 	b := make([]byte, 21)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
+	randpool.CSPRNG_RAND(b)
 
 	var sb [8 + 21]byte
 	for i := 0; i < 21; i++ {
