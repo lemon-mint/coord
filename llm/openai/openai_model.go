@@ -208,6 +208,10 @@ func convertOpenAIContent(chat openai.ChatCompletionStreamChoiceDelta) (*llm.Con
 }
 
 func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+	if chat == nil {
+		chat = &llm.ChatContext{}
+	}
+
 	chat.Contents = append(chat.Contents, input)
 	contents := convertContextOpenAI(chat)
 	chat.Contents[len(chat.Contents)-1] = nil

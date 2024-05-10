@@ -193,6 +193,10 @@ func convertVertexAIFinishReason(stop_reason genai.FinishReason) llm.FinishReaso
 }
 
 func (g *VertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+	if chat == nil {
+		chat = &llm.ChatContext{}
+	}
+
 	contents := convertContextVertexAI(chat)
 	tools := make([]*genai.FunctionDeclaration, len(chat.Tools))
 	for i := range chat.Tools {

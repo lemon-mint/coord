@@ -79,6 +79,10 @@ func convertContextOllama(chat *llm.ChatContext, system string) []ollama.Message
 }
 
 func (g *OllamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+	if chat == nil {
+		chat = &llm.ChatContext{}
+	}
+
 	stream := make(chan llm.Segment, 128)
 	v := &llm.StreamContent{
 		Content: &llm.Content{},

@@ -36,6 +36,10 @@ var (
 )
 
 func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+	if chat == nil {
+		chat = &llm.ChatContext{}
+	}
+
 	stream := make(chan llm.Segment, 128)
 	v := &llm.StreamContent{
 		Stream: stream,
