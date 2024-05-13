@@ -79,12 +79,12 @@ const (
 )
 
 type StreamContent struct {
-	Err          error        // Only Available after Stream channel is closed
-	Content      *Content     // Only Available after Stream channel is closed
-	UsageData    *UsageData   // Only Available after Stream channel is closed (Note: UsageData is not available for all LLM providers)
-	FinishReason FinishReason // Only Available after Stream channel is closed
+	Err          error        `json:"error"`        // Only Available after Stream channel is closed
+	Content      *Content     `json:"content"`      // Only Available after Stream channel is closed
+	UsageData    *UsageData   `json:"usageData"`    // Only Available after Stream channel is closed (Note: UsageData is not available for all LLM providers)
+	FinishReason FinishReason `json:"finishReason"` // Only Available after Stream channel is closed
 
-	Stream <-chan Segment // Token Stream
+	Stream <-chan Segment `json:"-"` // Token Stream
 }
 
 type LLM interface {
