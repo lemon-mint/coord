@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
+	"github.com/lemon-mint/vermittlungsstelle/llm/internal/utils001"
 
 	"github.com/valyala/fastjson"
 )
@@ -42,7 +43,8 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 
 	stream := make(chan llm.Segment, 128)
 	v := &llm.StreamContent{
-		Stream: stream,
+		Stream:  stream,
+		Content: &llm.Content{},
 	}
 
 	msgs := convertContextAnthropic(chat)
@@ -172,11 +174,12 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 					response.Model = string(message.Get("model").GetStringBytes())
 					response.StopReason = string(message.Get("stop_reason").GetStringBytes())
 					response.StopSequence = string(message.Get("stop_sequence").GetStringBytes())
+
 					if response.Usage == nil {
 						response.Usage = new(anthropicUsage)
 					}
-					response.Usage.InputTokens += message.Get("input_tokens").GetInt()
-					response.Usage.OutputTokens += message.Get("output_tokens").GetInt()
+					response.Usage.InputTokens += message.Get("usage").Get("input_tokens").GetInt()
+					response.Usage.OutputTokens += message.Get("usage").Get("output_tokens").GetInt()
 
 					for _, content := range ae.GetArray("content") {
 						var c anthropicSegment
@@ -211,8 +214,9 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 					if response.Usage == nil {
 						response.Usage = new(anthropicUsage)
 					}
-					response.Usage.InputTokens += delta.Get("input_tokens").GetInt()
-					response.Usage.OutputTokens += delta.Get("output_tokens").GetInt()
+					response.Usage.InputTokens += ae.Get("usage").Get("input_tokens").GetInt()
+					response.Usage.OutputTokens += ae.Get("usage").Get("output_tokens").GetInt()
+
 				case "content_block_start":
 					// {
 					// 	"type":"content_block_start",
@@ -250,12 +254,7 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 					anthropicMapContent(delta, &c)
 					switch c.Type {
 					case anthropicSegmentTextDelta:
-						if len(response.Content) > 0 && response.Content[len(response.Content)-1].Type == anthropicSegmentText {
-							response.Content[len(response.Content)-1].Text += c.Text
-						} else {
-							response.Content = append(response.Content, c)
-						}
-
+						response.Content = append(response.Content, c)
 						if len(c.Text) > 0 {
 							select {
 							case stream <- llm.Text(c.Text):
@@ -291,6 +290,7 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 		}
 
 		v.Content = convertAnthropicContent(response)
+		v.Content.Parts = utils001.MergeTexts(v.Content.Parts)
 		v.FinishReason = convertAnthropicFinishReason(response.StopReason)
 		if response.Usage != nil {
 			v.UsageData = &llm.UsageData{
@@ -299,7 +299,6 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 				TotalTokens:  response.Usage.InputTokens + response.Usage.OutputTokens,
 			}
 		}
-
 	}()
 
 	return v
@@ -387,8 +386,9 @@ func convertAnthropicContent(chat anthropicCreateMessagesResponse) *llm.Content 
 L:
 	for i := range chat.Content {
 		var a llm.Segment
+
 		switch chat.Content[i].Type {
-		case anthropicSegmentText:
+		case anthropicSegmentText, anthropicSegmentTextDelta:
 			a = llm.Text(chat.Content[i].Text)
 		case anthropicSegmentToolUse:
 			a = &llm.FunctionCall{
@@ -399,6 +399,7 @@ L:
 		default:
 			continue L
 		}
+
 		parts = append(parts, a)
 	}
 

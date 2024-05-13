@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
+	"github.com/lemon-mint/vermittlungsstelle/llm/internal/utils001"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/jsonschema"
@@ -236,6 +237,9 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 		Messages: contents,
 		Tools:    otools,
 		Stop:     g.config.StopSequences,
+		StreamOptions: &openai.StreamOptions{
+			IncludeUsage: true,
+		},
 	}
 
 	if g.config.MaxOutputTokens == nil || *g.config.MaxOutputTokens <= 0 {
@@ -268,6 +272,10 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 
 	go func() {
 		defer close(stream)
+		defer func() {
+			v.Content.Parts = utils001.MergeTexts(v.Content.Parts)
+		}()
+
 		for {
 			resp, err := iter.Recv()
 			if err != nil {
@@ -277,6 +285,16 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 
 				v.Err = err
 				return
+			}
+
+			if resp.Usage != nil {
+				if v.UsageData == nil {
+					v.UsageData = new(llm.UsageData)
+				}
+
+				v.UsageData.InputTokens += resp.Usage.PromptTokens
+				v.UsageData.OutputTokens += resp.Usage.CompletionTokens
+				v.UsageData.TotalTokens += resp.Usage.TotalTokens
 			}
 
 			if len(resp.Choices) > 0 {
@@ -303,17 +321,7 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 					continue
 				}
 				v.Content.Role = data.Role
-				for i := range data.Parts {
-					if text, ok := (data.Parts[i]).(llm.Text); !ok || len(v.Content.Parts) == 0 {
-						v.Content.Parts = append(v.Content.Parts, data.Parts[i])
-					} else {
-						if _, ok := v.Content.Parts[len(v.Content.Parts)-1].(llm.Text); ok {
-							v.Content.Parts[len(v.Content.Parts)-1] = v.Content.Parts[len(v.Content.Parts)-1].(llm.Text) + llm.Text(text)
-						} else {
-							v.Content.Parts = append(v.Content.Parts, data.Parts[i])
-						}
-					}
-				}
+				v.Content.Parts = append(v.Content.Parts, data.Parts...)
 
 				for i := range data.Parts {
 					select {

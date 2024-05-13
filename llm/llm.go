@@ -23,20 +23,34 @@ type Content struct {
 	Parts []Segment `json:"parts"`
 }
 
+//go:generate stringer -type=SegmentType -linecomment
+type SegmentType uint16
+
+const (
+	SegmentTypeUnknown          SegmentType = iota // unknown
+	SegmentTypeText                                // text
+	SegmentTypeInlineData                          // inline_data
+	SegmentTypeFunctionCall                        // function_call
+	SegmentTypeFunctionResponse                    // function_response
+)
+
 type Segment interface {
 	Segment()
+	Type() SegmentType
 }
 
 type Text string
 
-func (Text) Segment() {}
+func (Text) Segment()            {}
+func (t Text) Type() SegmentType { return SegmentTypeText }
 
 type InlineData struct {
 	MIMEType string `json:"mimeType"`
 	Data     []byte `json:"data"`
 }
 
-func (*InlineData) Segment() {}
+func (*InlineData) Segment()          {}
+func (*InlineData) Type() SegmentType { return SegmentTypeInlineData }
 
 type FunctionCall struct {
 	Name string                 `json:"name"`
@@ -44,7 +58,8 @@ type FunctionCall struct {
 	Args map[string]interface{} `json:"args"`
 }
 
-func (*FunctionCall) Segment() {}
+func (*FunctionCall) Segment()          {}
+func (*FunctionCall) Type() SegmentType { return SegmentTypeFunctionCall }
 
 type FunctionResponse struct {
 	Name    string      `json:"name,omitempty"`
@@ -53,7 +68,8 @@ type FunctionResponse struct {
 	IsError bool        `json:"-"`
 }
 
-func (*FunctionResponse) Segment() {}
+func (*FunctionResponse) Segment()          {}
+func (*FunctionResponse) Type() SegmentType { return SegmentTypeFunctionResponse }
 
 type FunctionDeclaration struct {
 	Name        string  `json:"name"`

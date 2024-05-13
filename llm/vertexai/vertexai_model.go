@@ -6,6 +6,7 @@ import (
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
 	"github.com/lemon-mint/vermittlungsstelle/llm/internal/callid"
+	"github.com/lemon-mint/vermittlungsstelle/llm/internal/utils001"
 
 	"cloud.google.com/go/vertexai/genai"
 	"google.golang.org/api/iterator"
@@ -333,6 +334,10 @@ func (g *VertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContex
 
 	go func() {
 		defer close(stream)
+		defer func() {
+			v.Content.Parts = utils001.MergeTexts(v.Content.Parts)
+		}()
+
 		for {
 			resp, err := resp.Next()
 			if err == iterator.Done {
