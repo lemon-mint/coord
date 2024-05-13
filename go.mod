@@ -3,20 +3,21 @@ module github.com/lemon-mint/vermittlungsstelle
 go 1.22.2
 
 require (
+	cloud.google.com/go/aiplatform v1.67.0
 	cloud.google.com/go/vertexai v0.8.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/lemon-mint/godotenv v1.0.3
-	github.com/ollama/ollama v0.1.34
+	github.com/ollama/ollama v0.1.37
 	github.com/sashabaranov/go-openai v1.23.1
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.23.0
 	golang.org/x/sys v0.20.0
-	google.golang.org/api v0.179.0
+	google.golang.org/api v0.180.0
+	google.golang.org/protobuf v1.34.1
 )
 
 require (
 	cloud.google.com/go v0.113.0 // indirect
-	cloud.google.com/go/aiplatform v1.67.0 // indirect
 	cloud.google.com/go/auth v0.4.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
@@ -49,5 +50,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240509183442-62759503f434 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240509183442-62759503f434 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
 )
