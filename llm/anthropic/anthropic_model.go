@@ -94,7 +94,7 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 			return
 		}
 
-		resp, err := anthropicHTTPClient.Do(r)
+		resp, err := g.client.httpClient.Do(r)
 		if err != nil {
 			v.Err = err
 			return

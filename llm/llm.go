@@ -30,6 +30,7 @@ const (
 	SegmentTypeUnknown          SegmentType = iota // unknown
 	SegmentTypeText                                // text
 	SegmentTypeInlineData                          // inline_data
+	SegmentTypeFileData                            // file_data
 	SegmentTypeFunctionCall                        // function_call
 	SegmentTypeFunctionResponse                    // function_response
 )
@@ -51,6 +52,14 @@ type InlineData struct {
 
 func (*InlineData) Segment()          {}
 func (*InlineData) Type() SegmentType { return SegmentTypeInlineData }
+
+type FileData struct {
+	MIMEType string `json:"mimeType"`
+	FileURI  string `json:"fileUri"`
+}
+
+func (*FileData) Segment()          {}
+func (*FileData) Type() SegmentType { return SegmentTypeFileData }
 
 type FunctionCall struct {
 	Name string                 `json:"name"`

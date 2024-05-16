@@ -63,6 +63,11 @@ L0:
 					Type: openai.ChatMessagePartTypeImageURL,
 					Text: "data:" + p.MIMEType + ";base64," + base64.URLEncoding.EncodeToString(p.Data),
 				})
+			case *llm.FileData:
+				msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
+					Type: openai.ChatMessagePartTypeImageURL,
+					Text: p.FileURI,
+				})
 			case *llm.FunctionCall:
 				jdata, err := json.Marshal(p.Args)
 				if err != nil {
@@ -373,4 +378,32 @@ func NewOpenAIModel(client *openai.Client, model string, config *llm.Config) *Op
 		model:  model,
 		config: config,
 	}
+}
+
+type Option func(*openai.ClientConfig)
+
+func WithBaseURL(url string) Option {
+	return func(c *openai.ClientConfig) {
+		c.BaseURL = url
+	}
+}
+
+func WithAzureConfig(apiKey, baseURL string) Option {
+	return func(c *openai.ClientConfig) {
+		*c = openai.DefaultAzureConfig(apiKey, baseURL)
+	}
+}
+
+func WithOpenAIConfig(config openai.ClientConfig) Option {
+	return func(c *openai.ClientConfig) {
+		*c = config
+	}
+}
+
+func NewOpenAIClient(apiKey string, opts ...Option) *openai.Client {
+	config := openai.DefaultConfig(apiKey)
+	for _, opt := range opts {
+		opt(&config)
+	}
+	return openai.NewClientWithConfig(config)
 }

@@ -19,28 +19,6 @@ var defaultOllamaConfig = &llm.Config{
 	MaxOutputTokens: ptrify(2048),
 }
 
-var _ llm.LLM = (*OllamaModel)(nil)
-
-type OllamaModel struct {
-	client *ollama.Client
-	config *llm.Config
-	model  string
-}
-
-func NewOllamaModel(client *ollama.Client, model string, config *llm.Config) *OllamaModel {
-	if config == nil {
-		config = defaultOllamaConfig
-	}
-
-	var _vm = &OllamaModel{
-		client: client,
-		config: config,
-		model:  model,
-	}
-
-	return _vm
-}
-
 func convertContextOllama(chat *llm.ChatContext, system string) []ollama.Message {
 	messages := make([]ollama.Message, 0, len(chat.Contents)+1)
 
@@ -152,4 +130,30 @@ func (g *OllamaModel) Name() string {
 
 func (g *OllamaModel) Close() error {
 	return nil
+}
+
+var _ llm.LLM = (*OllamaModel)(nil)
+
+type OllamaModel struct {
+	client *ollama.Client
+	config *llm.Config
+	model  string
+}
+
+func NewOllamaModel(client *ollama.Client, model string, config *llm.Config) *OllamaModel {
+	if config == nil {
+		config = defaultOllamaConfig
+	}
+
+	var _vm = &OllamaModel{
+		client: client,
+		config: config,
+		model:  model,
+	}
+
+	return _vm
+}
+
+func NewOllamaClient() (*ollama.Client, error) {
+	return ollama.ClientFromEnvironment()
 }

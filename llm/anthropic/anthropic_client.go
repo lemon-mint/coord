@@ -9,32 +9,6 @@ import (
 	"time"
 )
 
-var anthropicHTTPClient *http.Client = &http.Client{
-	Transport: &http.Transport{
-		MaxIdleConns:    16,
-		IdleConnTimeout: 30 * time.Second,
-	},
-}
-
-type AnthropicClient struct {
-	baseURL     string
-	authHandler func(r *http.Request) error
-}
-
-const anthropicBaseURL = "https://api.anthropic.com/v1"
-
-func NewAnthropicClient(apikey string) (*AnthropicClient, error) {
-	apikey = strings.TrimSpace(apikey)
-	return &AnthropicClient{
-		baseURL: anthropicBaseURL,
-		authHandler: func(r *http.Request) error {
-			r.Header.Set("X-API-Key", apikey)
-			r.Header.Set("Anthropic-Version", "2023-06-01")
-			return nil
-		},
-	}, nil
-}
-
 type anthropicRole string
 
 const (
@@ -80,6 +54,8 @@ type anthropicFileData struct {
 }
 
 type anthropicCreateMessagesRequest struct {
+	AnthropicVersion string `json:"anthropic_version,omitempty"`
+
 	Model     string             `json:"model"`
 	Messages  []anthropicMessage `json:"messages"`
 	MaxTokens int                `json:"max_tokens"`
@@ -147,7 +123,7 @@ func (c *AnthropicClient) createMessages(req *anthropicCreateMessagesRequest) (*
 		return nil, err
 	}
 
-	resp, err := anthropicHTTPClient.Do(r)
+	resp, err := c.httpClient.Do(r)
 	if err != nil {
 		return nil, err
 	}
@@ -163,4 +139,33 @@ func (c *AnthropicClient) createMessages(req *anthropicCreateMessagesRequest) (*
 	}
 
 	return &mres, nil
+}
+
+var anthropicHTTPClient *http.Client = &http.Client{
+	Transport: &http.Transport{
+		MaxIdleConns:    16,
+		IdleConnTimeout: 30 * time.Second,
+	},
+}
+
+type AnthropicClient struct {
+	baseURL     string
+	authHandler func(r *http.Request) error
+
+	httpClient *http.Client
+}
+
+const anthropicBaseURL = "https://api.anthropic.com/v1"
+
+func NewAnthropicClient(apikey string) (*AnthropicClient, error) {
+	apikey = strings.TrimSpace(apikey)
+	return &AnthropicClient{
+		baseURL: anthropicBaseURL,
+		authHandler: func(r *http.Request) error {
+			r.Header.Set("X-API-Key", apikey)
+			r.Header.Set("Anthropic-Version", "2023-06-01")
+			return nil
+		},
+		httpClient: anthropicHTTPClient,
+	}, nil
 }

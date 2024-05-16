@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/vertexai/genai"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 var _ llm.LLM = (*VertexAIModel)(nil)
@@ -101,6 +102,11 @@ func convertContentVertexAI(s *llm.Content) *genai.Content {
 			content.Parts = append(content.Parts, genai.Blob{
 				MIMEType: p.MIMEType,
 				Data:     p.Data,
+			})
+		case *llm.FileData:
+			content.Parts = append(content.Parts, genai.FileData{
+				MIMEType: p.MIMEType,
+				FileURI:  p.FileURI,
 			})
 		case *llm.FunctionCall:
 			content.Parts = append(content.Parts, genai.FunctionCall{
@@ -443,4 +449,13 @@ func NewVertexAIModel(client *genai.Client, model string, config *llm.Config) *V
 	}
 
 	return _vm
+}
+
+func NewVertexAIClient(
+	ctx context.Context,
+	projectID string,
+	location string,
+	opts ...option.ClientOption,
+) (*genai.Client, error) {
+	return genai.NewClient(ctx, projectID, location, opts...)
 }
