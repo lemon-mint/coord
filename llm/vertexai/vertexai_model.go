@@ -363,6 +363,10 @@ func (g *VertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContex
 					continue
 				}
 
+				if resp.Candidates[0].FinishReason != genai.FinishReasonUnspecified {
+					v.FinishReason = convertVertexAIFinishReason(resp.Candidates[0].FinishReason)
+				}
+
 				data := convertVertexAIContent(resp.Candidates[0].Content)
 				if v.Content.Role == "" {
 					v.Content.Role = data.Role
