@@ -1,4 +1,4 @@
-package vertexai_test
+package generativelanguage_test
 
 import (
 	"context"
@@ -6,10 +6,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/generative-ai-go/genai"
 	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/vertexai"
+	"github.com/lemon-mint/vermittlungsstelle/llm/generativelanguage"
 
-	"cloud.google.com/go/vertexai/genai"
 	"github.com/lemon-mint/godotenv"
 )
 
@@ -22,10 +22,9 @@ var client *genai.Client = func() *genai.Client {
 		os.Setenv(k, v)
 	}
 
-	client, err := vertexai.NewClient(
+	client, err := generativelanguage.NewClient(
 		context.Background(),
-		os.Getenv("PROJECT_ID"),
-		os.Getenv("REGION"),
+		os.Getenv("GEMINI_API_KEY"),
 	)
 	if err != nil {
 		panic(err)
@@ -33,8 +32,8 @@ var client *genai.Client = func() *genai.Client {
 	return client
 }()
 
-func TestVertexAIGenerate(t *testing.T) {
-	var model llm.LLM = vertexai.NewModel(client, "gemini-pro", nil)
+func TestGenerativeLanguageGenerate(t *testing.T) {
+	var model llm.LLM = generativelanguage.NewModel(client, "gemini-pro", nil)
 	defer model.Close()
 
 	output := model.GenerateStream(

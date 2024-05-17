@@ -140,7 +140,7 @@ type OllamaModel struct {
 	model  string
 }
 
-func NewOllamaModel(client *ollama.Client, model string, config *llm.Config) *OllamaModel {
+func NewModel(client *ollama.Client, model string, config *llm.Config) *OllamaModel {
 	if config == nil {
 		config = defaultOllamaConfig
 	}
@@ -154,6 +154,6 @@ func NewOllamaModel(client *ollama.Client, model string, config *llm.Config) *Ol
 	return _vm
 }
 
-func NewOllamaClient() (*ollama.Client, error) {
+func NewClient() (*ollama.Client, error) {
 	return ollama.ClientFromEnvironment()
 }

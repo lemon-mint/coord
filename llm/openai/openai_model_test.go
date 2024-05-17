@@ -21,11 +21,11 @@ var client *oai.Client = func() *oai.Client {
 		os.Setenv(k, v)
 	}
 
-	return openai.NewOpenAIClient(os.Getenv("OPENAI_API_KEY"))
+	return openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 }()
 
 func TestOpenAIGenerate(t *testing.T) {
-	var model llm.LLM = openai.NewOpenAIModel(client, "gpt-4o", nil)
+	var model llm.LLM = openai.NewModel(client, "gpt-4o", nil)
 	defer model.Close()
 
 	output := model.GenerateStream(

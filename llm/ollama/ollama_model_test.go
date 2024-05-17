@@ -19,7 +19,7 @@ var client *api.Client = func() *api.Client {
 }()
 
 func TestOllamaGenerate(t *testing.T) {
-	var model llm.LLM = ollama.NewOllamaModel(client, "llama3:latest", nil)
+	var model llm.LLM = ollama.NewModel(client, "llama3:latest", nil)
 	defer model.Close()
 
 	output := model.GenerateStream(

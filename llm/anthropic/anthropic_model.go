@@ -442,7 +442,7 @@ var defaultAnthropicConfig = &llm.Config{
 	MaxOutputTokens: ptrify(2048),
 }
 
-func NewAnthropicModel(client *AnthropicClient, model string, config *llm.Config) *AnthropicModel {
+func NewModel(client *AnthropicClient, model string, config *llm.Config) *AnthropicModel {
 	if config == nil {
 		config = defaultAnthropicConfig
 	}

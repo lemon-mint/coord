@@ -157,7 +157,7 @@ type AnthropicClient struct {
 
 const anthropicBaseURL = "https://api.anthropic.com/v1"
 
-func NewAnthropicClient(apikey string) (*AnthropicClient, error) {
+func NewClient(apikey string) (*AnthropicClient, error) {
 	apikey = strings.TrimSpace(apikey)
 	return &AnthropicClient{
 		baseURL: anthropicBaseURL,

@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/aiplatform v1.67.0
 	cloud.google.com/go/vertexai v0.9.0
 	github.com/goccy/go-yaml v1.11.3
+	github.com/google/generative-ai-go v0.12.0
 	github.com/lemon-mint/godotenv v1.0.3
 	github.com/ollama/ollama v0.1.38
 	github.com/sashabaranov/go-openai v1.24.0
@@ -18,6 +19,7 @@ require (
 
 require (
 	cloud.google.com/go v0.113.0 // indirect
+	cloud.google.com/go/ai v0.5.0 // indirect
 	cloud.google.com/go/auth v0.4.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
@@ -30,6 +32,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

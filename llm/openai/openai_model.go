@@ -368,7 +368,7 @@ func (g *OpenAIModel) Close() error {
 	return nil
 }
 
-func NewOpenAIModel(client *openai.Client, model string, config *llm.Config) *OpenAIModel {
+func NewModel(client *openai.Client, model string, config *llm.Config) *OpenAIModel {
 	if config == nil {
 		config = defaultOpenAIConfig
 	}
@@ -400,7 +400,7 @@ func WithOpenAIConfig(config openai.ClientConfig) Option {
 	}
 }
 
-func NewOpenAIClient(apiKey string, opts ...Option) *openai.Client {
+func NewClient(apiKey string, opts ...Option) *openai.Client {
 	config := openai.DefaultConfig(apiKey)
 	for _, opt := range opts {
 		opt(&config)
