@@ -1,4 +1,4 @@
-package vertexai_test
+package openai_test
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/vertexai"
-
-	"cloud.google.com/go/vertexai/genai"
 	"github.com/lemon-mint/godotenv"
+	"github.com/lemon-mint/vermittlungsstelle/llm"
+	"github.com/lemon-mint/vermittlungsstelle/llm/openai"
+	oai "github.com/sashabaranov/go-openai"
 )
 
-var client *genai.Client = func() *genai.Client {
+var client *oai.Client = func() *oai.Client {
 	envfile, err := os.ReadFile("../../.env")
 	if err != nil {
 		panic(err)
@@ -22,19 +21,11 @@ var client *genai.Client = func() *genai.Client {
 		os.Setenv(k, v)
 	}
 
-	client, err := vertexai.NewVertexAIClient(
-		context.Background(),
-		os.Getenv("PROJECT_ID"),
-		os.Getenv("REGION"),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return client
+	return openai.NewOpenAIClient(os.Getenv("OPENAI_API_KEY"))
 }()
 
-func TestVertexAIGenerate(t *testing.T) {
-	var model llm.LLM = vertexai.NewVertexAIModel(client, "gemini-pro", nil)
+func TestOpenAIGenerate(t *testing.T) {
+	var model llm.LLM = openai.NewOpenAIModel(client, "gpt-4o", nil)
 	defer model.Close()
 
 	output := model.GenerateStream(
