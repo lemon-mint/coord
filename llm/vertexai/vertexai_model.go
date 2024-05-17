@@ -398,7 +398,6 @@ func (g *VertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContex
 						v.FinishReason = llm.FinishReasonSafety
 					}
 				}
-				v.Err = llm.ErrNoResponse
 				continue
 			}
 
