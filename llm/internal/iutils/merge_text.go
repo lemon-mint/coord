@@ -1,4 +1,4 @@
-package utils001
+package iutils
 
 import "github.com/lemon-mint/vermittlungsstelle/llm"
 

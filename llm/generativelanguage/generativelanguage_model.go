@@ -6,7 +6,7 @@ import (
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
 	"github.com/lemon-mint/vermittlungsstelle/llm/internal/callid"
-	"github.com/lemon-mint/vermittlungsstelle/llm/internal/utils001"
+	"github.com/lemon-mint/vermittlungsstelle/llm/internal/iutils"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/iterator"
@@ -338,7 +338,7 @@ func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = utils001.MergeTexts(v.Content.Parts)
+			v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
 		}()
 
 		for {

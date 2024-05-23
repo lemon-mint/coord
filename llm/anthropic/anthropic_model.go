@@ -10,7 +10,7 @@ import (
 	"net/url"
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/internal/utils001"
+	"github.com/lemon-mint/vermittlungsstelle/llm/internal/iutils"
 
 	"github.com/valyala/fastjson"
 )
@@ -290,7 +290,7 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 		}
 
 		v.Content = convertAnthropicContent(response)
-		v.Content.Parts = utils001.MergeTexts(v.Content.Parts)
+		v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
 		v.FinishReason = convertAnthropicFinishReason(response.StopReason)
 		if response.Usage != nil {
 			v.UsageData = &llm.UsageData{

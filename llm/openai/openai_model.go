@@ -7,7 +7,7 @@ import (
 	"io"
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/internal/utils001"
+	"github.com/lemon-mint/vermittlungsstelle/llm/internal/iutils"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/jsonschema"
@@ -278,7 +278,7 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = utils001.MergeTexts(v.Content.Parts)
+			v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
 		}()
 
 		for {
