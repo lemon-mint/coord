@@ -427,7 +427,7 @@ func ptrify[T any](v T) *T {
 var defaultVertexAIConfig = &llm.Config{
 	Temperature:           ptrify(float32(0.4)),
 	MaxOutputTokens:       ptrify(2048),
-	SafetyFilterThreshold: llm.BlockLowAndAbove,
+	SafetyFilterThreshold: llm.BlockOnlyHigh,
 }
 
 type VertexAIModel struct {
