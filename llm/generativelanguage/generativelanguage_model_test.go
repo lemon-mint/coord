@@ -9,18 +9,11 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/lemon-mint/vermittlungsstelle/llm"
 	"github.com/lemon-mint/vermittlungsstelle/llm/generativelanguage"
-
-	"github.com/lemon-mint/godotenv"
+	"gopkg.eu.org/envloader"
 )
 
 var client *genai.Client = func() *genai.Client {
-	envfile, err := os.ReadFile("../../.env")
-	if err != nil {
-		panic(err)
-	}
-	for k, v := range godotenv.Parse(string(envfile)) {
-		os.Setenv(k, v)
-	}
+	envloader.LoadEnvFile("../../.env")
 
 	client, err := generativelanguage.NewClient(
 		context.Background(),

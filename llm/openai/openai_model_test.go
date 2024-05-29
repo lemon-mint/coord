@@ -6,20 +6,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lemon-mint/godotenv"
 	"github.com/lemon-mint/vermittlungsstelle/llm"
 	"github.com/lemon-mint/vermittlungsstelle/llm/openai"
 	oai "github.com/sashabaranov/go-openai"
+	"gopkg.eu.org/envloader"
 )
 
 var client *oai.Client = func() *oai.Client {
-	envfile, err := os.ReadFile("../../.env")
-	if err != nil {
-		panic(err)
-	}
-	for k, v := range godotenv.Parse(string(envfile)) {
-		os.Setenv(k, v)
-	}
+	envloader.LoadEnvFile("../../.env")
 
 	return openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 }()

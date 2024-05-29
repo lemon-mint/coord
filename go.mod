@@ -7,21 +7,21 @@ require (
 	cloud.google.com/go/texttospeech v1.7.7
 	cloud.google.com/go/vertexai v0.10.0
 	github.com/goccy/go-yaml v1.11.3
-	github.com/google/generative-ai-go v0.12.0
-	github.com/lemon-mint/godotenv v1.0.3
-	github.com/ollama/ollama v0.1.38
-	github.com/sashabaranov/go-openai v1.24.0
+	github.com/google/generative-ai-go v0.13.0
+	github.com/ollama/ollama v0.1.39
+	github.com/sashabaranov/go-openai v1.24.1
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.23.0
 	golang.org/x/sys v0.20.0
-	google.golang.org/api v0.181.0
+	google.golang.org/api v0.182.0
 	google.golang.org/protobuf v1.34.1
+	gopkg.eu.org/envloader v1.1.0
 )
 
 require (
-	cloud.google.com/go v0.113.0 // indirect
-	cloud.google.com/go/ai v0.5.0 // indirect
-	cloud.google.com/go/auth v0.4.2 // indirect
+	cloud.google.com/go v0.114.0 // indirect
+	cloud.google.com/go/ai v0.6.0 // indirect
+	cloud.google.com/go/auth v0.5.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v1.1.8 // indirect
@@ -50,8 +50,8 @@ require (
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto v0.0.0-20240521202816-d264139d666e // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240521202816-d264139d666e // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240521202816-d264139d666e // indirect
+	google.golang.org/genproto v0.0.0-20240528184218-531527333157 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240528184218-531527333157 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
 	google.golang.org/grpc v1.64.0 // indirect
 )

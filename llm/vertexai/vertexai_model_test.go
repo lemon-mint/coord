@@ -8,19 +8,13 @@ import (
 
 	"github.com/lemon-mint/vermittlungsstelle/llm"
 	"github.com/lemon-mint/vermittlungsstelle/llm/vertexai"
+	"gopkg.eu.org/envloader"
 
 	"cloud.google.com/go/vertexai/genai"
-	"github.com/lemon-mint/godotenv"
 )
 
 var client *genai.Client = func() *genai.Client {
-	envfile, err := os.ReadFile("../../.env")
-	if err != nil {
-		panic(err)
-	}
-	for k, v := range godotenv.Parse(string(envfile)) {
-		os.Setenv(k, v)
-	}
+	envloader.LoadEnvFile("../../.env")
 
 	client, err := vertexai.NewClient(
 		context.Background(),
