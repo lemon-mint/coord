@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/vertexai"
+	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llm/vertexai"
 	"gopkg.eu.org/envloader"
 
 	"cloud.google.com/go/vertexai/genai"

@@ -5,7 +5,7 @@ import (
 
 	texttospeech "cloud.google.com/go/texttospeech/apiv1"
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
-	"github.com/lemon-mint/vermittlungsstelle/tts"
+	"github.com/lemon-mint/coord/tts"
 )
 
 type TextToSpeechModel struct {

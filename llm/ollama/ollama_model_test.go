@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/ollama"
+	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llm/ollama"
 	"github.com/ollama/ollama/api"
 )
 

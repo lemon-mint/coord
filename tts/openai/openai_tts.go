@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/lemon-mint/vermittlungsstelle/tts"
+	"github.com/lemon-mint/coord/tts"
 	"github.com/sashabaranov/go-openai"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/internal/iutils"
+	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llm/internal/iutils"
 
 	ollama "github.com/ollama/ollama/api"
 )

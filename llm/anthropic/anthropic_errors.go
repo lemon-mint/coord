@@ -1,6 +1,6 @@
 package anthropic
 
-import "github.com/lemon-mint/vermittlungsstelle/llm"
+import "github.com/lemon-mint/coord/llm"
 
 func getErrorByType(err_t string) error {
 	switch err_t {

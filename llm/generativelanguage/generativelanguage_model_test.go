@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/generative-ai-go/genai"
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/generativelanguage"
+	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llm/generativelanguage"
 	"gopkg.eu.org/envloader"
 )
 

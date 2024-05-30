@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/internal/callid"
-	"github.com/lemon-mint/vermittlungsstelle/llm/internal/iutils"
+	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llm/internal/callid"
+	"github.com/lemon-mint/coord/llm/internal/iutils"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/iterator"

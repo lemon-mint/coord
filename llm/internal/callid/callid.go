@@ -1,7 +1,7 @@
 package callid
 
 import (
-	"github.com/lemon-mint/vermittlungsstelle/internal/randpool"
+	"github.com/lemon-mint/coord/internal/randpool"
 )
 
 const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

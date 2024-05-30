@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
+	"github.com/lemon-mint/coord/llm"
 
 	yaml "github.com/goccy/go-yaml"
 )

@@ -1,4 +1,4 @@
-module github.com/lemon-mint/vermittlungsstelle
+module github.com/lemon-mint/coord
 
 go 1.22.2
 

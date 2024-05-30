@@ -1,6 +1,6 @@
 package iutils
 
-import "github.com/lemon-mint/vermittlungsstelle/llm"
+import "github.com/lemon-mint/coord/llm"
 
 func MergeTexts(p []llm.Segment) []llm.Segment {
 	if len(p) < 2 {

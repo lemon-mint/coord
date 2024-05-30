@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lemon-mint/vermittlungsstelle/llm"
-	"github.com/lemon-mint/vermittlungsstelle/llm/openai"
+	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llm/openai"
 	oai "github.com/sashabaranov/go-openai"
 	"gopkg.eu.org/envloader"
 )
