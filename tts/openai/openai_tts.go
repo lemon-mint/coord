@@ -16,7 +16,7 @@ type OpenAITextToSpeech struct {
 	speed float64
 }
 
-var _ tts.TTSModel = (*OpenAITextToSpeech)(nil)
+var _ tts.TTS = (*OpenAITextToSpeech)(nil)
 
 func (g *OpenAITextToSpeech) GenerateSpeech(ctx context.Context, text string, fmt tts.Format) (*tts.AudioFile, error) {
 	var encoding openai.SpeechResponseFormat

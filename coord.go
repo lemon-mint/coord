@@ -8,28 +8,69 @@ import (
 )
 
 var (
-	providersMu sync.RWMutex
-	providers   = make(map[string]provider.Provider)
+	llmProvidersMu sync.RWMutex
+	llmProviders   = make(map[string]provider.LLMProvider)
+
+	ttsProvidersMu sync.RWMutex
+	ttsProviders   = make(map[string]provider.TTSProvider)
+
+	embeddingProvidersMu sync.RWMutex
+	embeddingProviders   = make(map[string]provider.EmbeddingProvider)
 )
 
-// Providers returns the names of the registered providers.
-func Providers() []string {
-	providersMu.RLock()
-	defer providersMu.RUnlock()
-	list := make([]string, 0, len(providers))
-	for name := range providers {
+// LLMProviders returns the names of the registered llm providers.
+func LLMProviders() []string {
+	llmProvidersMu.RLock()
+	defer llmProvidersMu.RUnlock()
+	list := make([]string, 0, len(llmProviders))
+	for name := range llmProviders {
 		list = append(list, name)
 	}
 	sort.Strings(list)
 	return list
 }
 
-// RegisterProvider registers a provider.
-func RegisterProvider(name string, p provider.Provider) {
-	providersMu.Lock()
-	defer providersMu.Unlock()
-	if p == nil {
-		panic("coord: Register provider is nil")
+// RegisterLLMProvider registers a llm provider.
+func RegisterLLMProvider(name string, p provider.LLMProvider) {
+	llmProvidersMu.Lock()
+	defer llmProvidersMu.Unlock()
+	llmProviders[name] = p
+}
+
+// TTSProviders returns the names of the registered tts providers.
+func TTSProviders() []string {
+	ttsProvidersMu.RLock()
+	defer ttsProvidersMu.RUnlock()
+	list := make([]string, 0, len(ttsProviders))
+	for name := range ttsProviders {
+		list = append(list, name)
 	}
-	providers[name] = p
+	sort.Strings(list)
+	return list
+}
+
+// RegisterTTSProvider registers a tts provider.
+func RegisterTTSProvider(name string, p provider.TTSProvider) {
+	ttsProvidersMu.Lock()
+	defer ttsProvidersMu.Unlock()
+	ttsProviders[name] = p
+}
+
+// EmbeddingProviders returns the names of the registered embedding providers.
+func EmbeddingProviders() []string {
+	embeddingProvidersMu.RLock()
+	defer embeddingProvidersMu.RUnlock()
+	list := make([]string, 0, len(embeddingProviders))
+	for name := range embeddingProviders {
+		list = append(list, name)
+	}
+	sort.Strings(list)
+	return list
+}
+
+// RegisterEmbeddingProvider registers an embedding provider.
+func RegisterEmbeddingProvider(name string, p provider.EmbeddingProvider) {
+	embeddingProvidersMu.Lock()
+	defer embeddingProvidersMu.Unlock()
+	embeddingProviders[name] = p
 }

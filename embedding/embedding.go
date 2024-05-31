@@ -10,9 +10,9 @@ type EmbeddingModel interface {
 }
 
 var (
-	ErrUnsupported = errors.New("unsupported") // This Error occurs whem the model does not support the content type provided.
-	ErrTooLong     = errors.New("too long")    // This Error occurs when the text is too long.
-	ErrNoResult    = errors.New("no result")   // This Error occurs when the model does not return any result.
+	ErrUnsupported       = errors.New("unsupported")         // This Error occurs whem the model does not support the content type provided.
+	ErrMaxLengthExceeded = errors.New("max length exceeded") // This Error occurs when the content exceeds the maximum length.
+	ErrNoResult          = errors.New("no result")           // This Error occurs when the model does not return any result.
 )
 
 //go:generate stringer -type=TaskType

@@ -20,7 +20,7 @@ type TextToSpeechModel struct {
 	sample_rate int32
 }
 
-var _ tts.TTSModel = (*TextToSpeechModel)(nil)
+var _ tts.TTS = (*TextToSpeechModel)(nil)
 
 func (g *TextToSpeechModel) GenerateSpeech(ctx context.Context, text string, fmt tts.Format) (*tts.AudioFile, error) {
 	var encoding texttospeechpb.AudioEncoding

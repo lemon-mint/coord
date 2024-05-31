@@ -25,6 +25,9 @@ type AudioFile struct {
 
 var ErrUnsupportedFileFormat = errors.New("unsupported file format")
 
-type TTSModel interface {
+type Config struct {
+}
+
+type TTS interface {
 	GenerateSpeech(ctx context.Context, text string, fmt Format) (*AudioFile, error)
 }
