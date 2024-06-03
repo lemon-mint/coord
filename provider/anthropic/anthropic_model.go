@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
 	"github.com/lemon-mint/coord/pconf"
@@ -499,3 +500,16 @@ func (AnthropicProvider) NewClient(ctx context.Context, configs ...pconf.Config)
 const ProviderName = "anthropic"
 
 var Provider AnthropicProvider
+
+func init() {
+	var exists bool
+	for _, n := range coord.LLMProviders() {
+		if n == ProviderName {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		coord.RegisterLLMProvider(ProviderName, Provider)
+	}
+}

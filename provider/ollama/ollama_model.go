@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
 	"github.com/lemon-mint/coord/pconf"
@@ -191,3 +192,16 @@ func (OllamaProvider) NewClient(ctx context.Context, configs ...pconf.Config) (p
 const ProviderName = "ollama"
 
 var Provider OllamaProvider
+
+func init() {
+	var exists bool
+	for _, n := range coord.LLMProviders() {
+		if n == ProviderName {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		coord.RegisterLLMProvider(ProviderName, Provider)
+	}
+}

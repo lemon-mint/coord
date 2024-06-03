@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/internal/callid"
 	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
@@ -502,3 +503,16 @@ func (VertexAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) 
 const ProviderName = "vertexai"
 
 var Provider VertexAIProvider
+
+func init() {
+	var exists bool
+	for _, n := range coord.LLMProviders() {
+		if n == ProviderName {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		coord.RegisterLLMProvider(ProviderName, Provider)
+	}
+}

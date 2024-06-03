@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
 	"github.com/lemon-mint/coord/pconf"
@@ -452,3 +453,16 @@ func (OpenAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) (p
 const ProviderName = "openai"
 
 var Provider OpenAIProvider
+
+func init() {
+	var exists bool
+	for _, n := range coord.LLMProviders() {
+		if n == ProviderName {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		coord.RegisterLLMProvider(ProviderName, Provider)
+	}
+}
