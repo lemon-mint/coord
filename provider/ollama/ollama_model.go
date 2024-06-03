@@ -146,13 +146,17 @@ type ollamaModel struct {
 	model  string
 }
 
-var _ provider.LLMClient = (*OllamaClient)(nil)
+var _ provider.LLMClient = (*ollamaClient)(nil)
 
-type OllamaClient struct {
+type ollamaClient struct {
 	client *ollama.Client
 }
 
-func (g *OllamaClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
+func (*ollamaClient) Close() error {
+	return nil
+}
+
+func (g *ollamaClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultOllamaConfig
 	}
@@ -171,7 +175,7 @@ var _ provider.LLMProvider = Provider
 type OllamaProvider struct {
 }
 
-func (OllamaProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+func (OllamaProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
 	for i := range configs {
 		configs[i].Apply(&client_config)
@@ -184,7 +188,7 @@ func (OllamaProvider) NewClient(ctx context.Context, configs ...pconf.Config) (p
 
 	//TODO: Apply client_config, baseurl
 
-	return &OllamaClient{
+	return &ollamaClient{
 		client: ollama.NewClient(&url.URL{Scheme: host.Scheme, Host: net.JoinHostPort(host.Host, host.Port)}, http.DefaultClient),
 	}, nil
 }

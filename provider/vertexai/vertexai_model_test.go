@@ -21,7 +21,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 
 	envloader.LoadAndBindEnvFile("../../.env", c)
 
-	client, err := vertexai.Provider.NewClient(
+	client, err := vertexai.Provider.NewLLMClient(
 		context.Background(),
 		pconf.WithProjectID(c.ProjectID),
 		pconf.WithLocation(c.Location),
@@ -34,7 +34,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 }()
 
 func TestVertexAIGenerate(t *testing.T) {
-	model, err := client.NewModel("gemini-1.5-flash-001", nil)
+	model, err := client.NewLLM("gemini-1.5-flash-001", nil)
 	if err != nil {
 		panic(err)
 	}

@@ -372,13 +372,17 @@ func (g *openAIModel) Close() error {
 	return nil
 }
 
-var _ provider.LLMClient = (*OpenAIClient)(nil)
+var _ provider.LLMClient = (*openAIClient)(nil)
 
-type OpenAIClient struct {
+type openAIClient struct {
 	client *openai.Client
 }
 
-func (g *OpenAIClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
+func (*openAIClient) Close() error {
+	return nil
+}
+
+func (g *openAIClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultOpenAIConfig
 	}
@@ -421,7 +425,7 @@ func WithOpenAIConfig(config openai.ClientConfig) pconf.Config {
 	}
 }
 
-func (OpenAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+func (OpenAIProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
 	var openai_config *openai.ClientConfig
 	for i := range configs {
@@ -445,7 +449,7 @@ func (OpenAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) (p
 		openai_config.BaseURL = client_config.BaseURL
 	}
 
-	return &OpenAIClient{
+	return &openAIClient{
 		client: openai.NewClientWithConfig(*openai_config),
 	}, nil
 }

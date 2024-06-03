@@ -106,7 +106,7 @@ type anthropicCreateMessagesResponse struct {
 	Stream       bool               `json:"stream"`
 }
 
-func (c *anthropicClient) createMessages(req *anthropicCreateMessagesRequest) (*anthropicCreateMessagesResponse, error) {
+func (c *anthropicAPIClient) createMessages(req *anthropicCreateMessagesRequest) (*anthropicCreateMessagesResponse, error) {
 	url, err := url.JoinPath(c.baseURL, "./messages")
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ var anthropicHTTPClient *http.Client = &http.Client{
 	},
 }
 
-type anthropicClient struct {
+type anthropicAPIClient struct {
 	baseURL     string
 	authHandler func(r *http.Request) error
 
@@ -164,9 +164,9 @@ type anthropicClient struct {
 
 const anthropicBaseURL = "https://api.anthropic.com/v1"
 
-func newClient(apikey string) (*anthropicClient, error) {
+func newClient(apikey string) (*anthropicAPIClient, error) {
 	apikey = strings.TrimSpace(apikey)
-	return &anthropicClient{
+	return &anthropicAPIClient{
 		baseURL: anthropicBaseURL,
 		authHandler: func(r *http.Request) error {
 			r.Header.Set("X-API-Key", apikey)

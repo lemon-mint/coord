@@ -20,7 +20,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 
 	envloader.LoadAndBindEnvFile("../../.env", c)
 
-	client, err := openai.Provider.NewClient(
+	client, err := openai.Provider.NewLLMClient(
 		context.Background(),
 		pconf.WithAPIKey(c.APIKey),
 	)
@@ -32,7 +32,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 }()
 
 func TestOpenAIGenerate(t *testing.T) {
-	model, err := client.NewModel("gpt-3.5-turbo", nil)
+	model, err := client.NewLLM("gpt-3.5-turbo", nil)
 	if err != nil {
 		panic(err)
 	}

@@ -10,25 +10,28 @@ import (
 )
 
 type LLMClient interface {
-	NewModel(model string, config *llm.Config) (llm.LLM, error)
+	NewLLM(model string, config *llm.Config) (llm.LLM, error)
+	Close() error
 }
 
 type LLMProvider interface {
-	NewClient(ctx context.Context, configs ...pconf.Config) (LLMClient, error)
-}
-
-type TTSClient interface {
-	NewModel(model string, config *tts.Config) (tts.TTS, error)
-}
-
-type TTSProvider interface {
-	NewClient(ctx context.Context, configs ...pconf.Config) (TTSClient, error)
+	NewLLMClient(ctx context.Context, configs ...pconf.Config) (LLMClient, error)
 }
 
 type EmbeddingClient interface {
-	NewModel(model string, config *tts.Config) (embedding.EmbeddingModel, error)
+	NewEmbedding(model string, config *embedding.Config) (embedding.EmbeddingModel, error)
+	Close() error
 }
 
 type EmbeddingProvider interface {
-	NewClient(ctx context.Context, configs ...pconf.Config) (EmbeddingClient, error)
+	NewEmbeddingClient(ctx context.Context, configs ...pconf.Config) (EmbeddingClient, error)
+}
+
+type TTSClient interface {
+	NewTTS(model string, config *tts.Config) (tts.TTS, error)
+	Close() error
+}
+
+type TTSProvider interface {
+	NewTTSClient(ctx context.Context, configs ...pconf.Config) (TTSClient, error)
 }

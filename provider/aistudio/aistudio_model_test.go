@@ -20,7 +20,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 
 	envloader.LoadAndBindEnvFile("../../.env", c)
 
-	client, err := aistudio.Provider.NewClient(
+	client, err := aistudio.Provider.NewLLMClient(
 		context.Background(),
 		pconf.WithAPIKey(c.APIKey),
 	)
@@ -32,7 +32,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 }()
 
 func TestAIStudioGenerate(t *testing.T) {
-	model, err := client.NewModel("gemini-1.5-flash-latest", nil)
+	model, err := client.NewLLM("gemini-1.5-flash-latest", nil)
 	if err != nil {
 		panic(err)
 	}

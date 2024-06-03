@@ -20,7 +20,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 
 	envloader.LoadAndBindEnvFile("../../.env", c)
 
-	client, err := anthropic.Provider.NewClient(
+	client, err := anthropic.Provider.NewLLMClient(
 		context.Background(),
 		pconf.WithAPIKey(c.APIKey),
 	)
@@ -32,7 +32,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 }()
 
 func TestAnthropicGenerate(t *testing.T) {
-	model, err := client.NewModel("claude-3-haiku-20240307", nil)
+	model, err := client.NewLLM("claude-3-haiku-20240307", nil)
 	if err != nil {
 		panic(err)
 	}

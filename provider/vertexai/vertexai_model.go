@@ -12,6 +12,7 @@ import (
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
 
+	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/vertexai/genai"
 	"google.golang.org/api/iterator"
 )
@@ -439,19 +440,41 @@ type vertexAIModel struct {
 	model  string
 }
 
-var _ provider.LLMClient = (*VertexAIClient)(nil)
+var _ provider.LLMClient = (*vertexAIClient)(nil)
 
-type VertexAIClient struct {
-	client *genai.Client
+type vertexAIClient struct {
+	genaiClient      *genai.Client
+	predictionClient *aiplatform.PredictionClient
+
+	location  string
+	projectID string
 }
 
-func (g *VertexAIClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
+func (g *vertexAIClient) Close() error {
+	if g.genaiClient != nil {
+		err := g.genaiClient.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	if g.predictionClient != nil {
+		err := g.predictionClient.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *vertexAIClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultVertexAIConfig
 	}
 
 	var _vm = &vertexAIModel{
-		client: g.client,
+		client: g.genaiClient,
 		config: config,
 		model:  model,
 	}
@@ -469,7 +492,7 @@ var (
 	ErrProjectIDRequired error = errors.New("project ID is required")
 )
 
-func (VertexAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+func (VertexAIProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
 	for i := range configs {
 		configs[i].Apply(&client_config)
@@ -495,8 +518,10 @@ func (VertexAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) 
 		return nil, err
 	}
 
-	return &VertexAIClient{
-		client: genaiClient,
+	return &vertexAIClient{
+		genaiClient: genaiClient,
+		location:    location,
+		projectID:   projectID,
 	}, nil
 }
 

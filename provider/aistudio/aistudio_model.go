@@ -435,13 +435,17 @@ type generativeLanguageModel struct {
 	model  string
 }
 
-var _ provider.LLMClient = (*AIStudioClient)(nil)
+var _ provider.LLMClient = (*aiStudioClient)(nil)
 
-type AIStudioClient struct {
+type aiStudioClient struct {
 	client *genai.Client
 }
 
-func (g *AIStudioClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
+func (g *aiStudioClient) Close() error {
+	return g.client.Close()
+}
+
+func (g *aiStudioClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultGenerativeLanguageConfig
 	}
@@ -464,7 +468,7 @@ var (
 	ErrAPIKeyRequired error = errors.New("api key is required")
 )
 
-func (AIStudioProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+func (AIStudioProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
 	for i := range configs {
 		configs[i].Apply(&client_config)
@@ -483,7 +487,7 @@ func (AIStudioProvider) NewClient(ctx context.Context, configs ...pconf.Config) 
 		return nil, err
 	}
 
-	return &AIStudioClient{
+	return &aiStudioClient{
 		client: genaiClient,
 	}, nil
 }

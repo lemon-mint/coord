@@ -11,7 +11,7 @@ import (
 )
 
 var client provider.LLMClient = func() provider.LLMClient {
-	client, err := ollama.Provider.NewClient(
+	client, err := ollama.Provider.NewLLMClient(
 		context.Background(),
 	)
 	if err != nil {
@@ -22,7 +22,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 }()
 
 func TestOllamaGenerate(t *testing.T) {
-	model, err := client.NewModel("llama3:latest", nil)
+	model, err := client.NewLLM("llama3:latest", nil)
 	if err != nil {
 		panic(err)
 	}

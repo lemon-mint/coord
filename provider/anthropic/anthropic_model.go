@@ -22,7 +22,7 @@ import (
 var _ llm.LLM = (*anthropicModel)(nil)
 
 type anthropicModel struct {
-	client *anthropicClient
+	client *anthropicAPIClient
 	config *llm.Config
 	model  string
 }
@@ -446,13 +446,17 @@ var defaultAnthropicConfig = &llm.Config{
 	MaxOutputTokens: ptrify(2048),
 }
 
-var _ provider.LLMClient = (*AnthropicClient)(nil)
+var _ provider.LLMClient = (*anthropicClient)(nil)
 
-type AnthropicClient struct {
-	client *anthropicClient
+type anthropicClient struct {
+	client *anthropicAPIClient
 }
 
-func (g *AnthropicClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
+func (*anthropicClient) Close() error {
+	return nil
+}
+
+func (g *anthropicClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultAnthropicConfig
 	}
@@ -475,7 +479,7 @@ var (
 	ErrAPIKeyRequired error = errors.New("api key is required")
 )
 
-func (AnthropicProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+func (AnthropicProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
 	for i := range configs {
 		configs[i].Apply(&client_config)
@@ -492,7 +496,7 @@ func (AnthropicProvider) NewClient(ctx context.Context, configs ...pconf.Config)
 		return nil, err
 	}
 
-	return &AnthropicClient{
+	return &anthropicClient{
 		client: _anthropicClient,
 	}, nil
 }

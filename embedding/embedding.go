@@ -28,3 +28,7 @@ const (
 	TaskTypeFactVerification
 	TaskTypeQA
 )
+
+type Config struct {
+	Dimension int
+}
