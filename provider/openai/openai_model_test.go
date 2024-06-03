@@ -31,7 +31,7 @@ var client provider.LLMClient = func() provider.LLMClient {
 	return client
 }()
 
-func TestAnthropicGenerate(t *testing.T) {
+func TestOpenAIGenerate(t *testing.T) {
 	model, err := client.NewModel("gpt-3.5-turbo", nil)
 	if err != nil {
 		panic(err)
