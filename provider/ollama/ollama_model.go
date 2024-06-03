@@ -2,22 +2,18 @@ package ollama
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"net/url"
 	"strings"
 
+	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llm/internal/iutils"
+	"github.com/lemon-mint/coord/pconf"
+	"github.com/lemon-mint/coord/provider"
 
 	ollama "github.com/ollama/ollama/api"
 )
-
-func ptrify[T any](v T) *T {
-	return &v
-}
-
-var defaultOllamaConfig = &llm.Config{
-	Temperature:     ptrify(float32(0.4)),
-	MaxOutputTokens: ptrify(2048),
-}
 
 func convertContextOllama(chat *llm.ChatContext, system string) []ollama.Message {
 	messages := make([]ollama.Message, 0, len(chat.Contents)+1)
@@ -58,7 +54,7 @@ func convertContextOllama(chat *llm.ChatContext, system string) []ollama.Message
 	return messages
 }
 
-func (g *OllamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+func (g *ollamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
 	if chat == nil {
 		chat = &llm.ChatContext{}
 	}
@@ -72,7 +68,7 @@ func (g *OllamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
+			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
 		}()
 
 		err := g.client.Heartbeat(ctx)
@@ -124,36 +120,74 @@ func (g *OllamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	return v
 }
 
-func (g *OllamaModel) Name() string {
+func (g *ollamaModel) Name() string {
 	return g.model
 }
 
-func (g *OllamaModel) Close() error {
+func (g *ollamaModel) Close() error {
 	return nil
 }
 
-var _ llm.LLM = (*OllamaModel)(nil)
+func ptrify[T any](v T) *T {
+	return &v
+}
 
-type OllamaModel struct {
+var defaultOllamaConfig = &llm.Config{
+	Temperature:     ptrify(float32(0.8)),
+	MaxOutputTokens: ptrify(2048),
+}
+
+var _ llm.LLM = (*ollamaModel)(nil)
+
+type ollamaModel struct {
 	client *ollama.Client
 	config *llm.Config
 	model  string
 }
 
-func NewModel(client *ollama.Client, model string, config *llm.Config) *OllamaModel {
+var _ provider.LLMClient = (*OllamaClient)(nil)
+
+type OllamaClient struct {
+	client *ollama.Client
+}
+
+func (g *OllamaClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultOllamaConfig
 	}
 
-	var _vm = &OllamaModel{
-		client: client,
-		config: config,
+	var _vm = &ollamaModel{
+		client: g.client,
 		model:  model,
+		config: config,
 	}
 
-	return _vm
+	return _vm, nil
 }
 
-func NewClient() (*ollama.Client, error) {
-	return ollama.ClientFromEnvironment()
+var _ provider.LLMProvider = Provider
+
+type OllamaProvider struct {
 }
+
+func (OllamaProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+	client_config := pconf.GeneralConfig{}
+	for i := range configs {
+		configs[i].Apply(&client_config)
+	}
+
+	host, err := ollama.GetOllamaHost()
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: Apply client_config, baseurl
+
+	return &OllamaClient{
+		client: ollama.NewClient(&url.URL{Scheme: host.Scheme, Host: net.JoinHostPort(host.Host, host.Port)}, http.DefaultClient),
+	}, nil
+}
+
+const ProviderName = "ollama"
+
+var Provider OllamaProvider

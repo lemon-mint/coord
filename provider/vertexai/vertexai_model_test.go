@@ -3,32 +3,41 @@ package vertexai_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llm/vertexai"
+	"github.com/lemon-mint/coord/pconf"
+	"github.com/lemon-mint/coord/provider"
+	"github.com/lemon-mint/coord/provider/vertexai"
 	"gopkg.eu.org/envloader"
-
-	"cloud.google.com/go/vertexai/genai"
 )
 
-var client *genai.Client = func() *genai.Client {
-	envloader.LoadEnvFile("../../.env")
+var client provider.LLMClient = func() provider.LLMClient {
+	type Config struct {
+		Location  string `env:"LOCATION"`
+		ProjectID string `env:"PROJECT_ID"`
+	}
+	c := &Config{}
 
-	client, err := vertexai.NewClient(
+	envloader.LoadAndBindEnvFile("../../.env", c)
+
+	client, err := vertexai.Provider.NewClient(
 		context.Background(),
-		os.Getenv("PROJECT_ID"),
-		os.Getenv("REGION"),
+		pconf.WithProjectID(c.ProjectID),
+		pconf.WithLocation(c.Location),
 	)
 	if err != nil {
 		panic(err)
 	}
+
 	return client
 }()
 
 func TestVertexAIGenerate(t *testing.T) {
-	var model llm.LLM = vertexai.NewModel(client, "gemini-pro", nil)
+	model, err := client.NewModel("gemini-1.5-flash-001", nil)
+	if err != nil {
+		panic(err)
+	}
 	defer model.Close()
 
 	output := model.GenerateStream(

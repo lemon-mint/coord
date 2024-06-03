@@ -4,16 +4,19 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 
+	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llm/internal/iutils"
+	"github.com/lemon-mint/coord/pconf"
+	"github.com/lemon-mint/coord/provider"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/jsonschema"
 )
 
-var _ llm.LLM = (*OpenAIModel)(nil)
+var _ llm.LLM = (*openAIModel)(nil)
 
 func convertContextOpenAI(chat *llm.ChatContext) []openai.ChatCompletionMessage {
 	contents := make([]openai.ChatCompletionMessage, 0, len(chat.Contents)+1)
@@ -213,7 +216,7 @@ func convertOpenAIContent(chat openai.ChatCompletionStreamChoiceDelta) (*llm.Con
 	}, nil
 }
 
-func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+func (g *openAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
 	if chat == nil {
 		chat = &llm.ChatContext{}
 	}
@@ -278,7 +281,7 @@ func (g *OpenAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
+			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
 		}()
 
 		for {
@@ -354,56 +357,98 @@ var defaultOpenAIConfig = &llm.Config{
 	SafetyFilterThreshold: llm.BlockLowAndAbove,
 }
 
-type OpenAIModel struct {
+type openAIModel struct {
 	client *openai.Client
 	config *llm.Config
 	model  string
 }
 
-func (o *OpenAIModel) Name() string {
+func (o *openAIModel) Name() string {
 	return o.model
 }
 
-func (g *OpenAIModel) Close() error {
+func (g *openAIModel) Close() error {
 	return nil
 }
 
-func NewModel(client *openai.Client, model string, config *llm.Config) *OpenAIModel {
+var _ provider.LLMClient = (*OpenAIClient)(nil)
+
+type OpenAIClient struct {
+	client *openai.Client
+}
+
+func (g *OpenAIClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultOpenAIConfig
 	}
 
-	return &OpenAIModel{
-		client: client,
-		model:  model,
+	var _vm = &openAIModel{
+		client: g.client,
 		config: config,
+		model:  model,
+	}
+
+	return _vm, nil
+}
+
+var _ provider.LLMProvider = Provider
+
+type OpenAIProvider struct {
+}
+
+var (
+	ErrAPIKeyRequired error = errors.New("api key is required")
+)
+
+type openaiConfig struct {
+	c openai.ClientConfig
+}
+
+func (*openaiConfig) Apply(g *pconf.GeneralConfig) error {
+	return nil
+}
+
+func WithAzureConfig(apiKey, baseURL string) pconf.Config {
+	return &openaiConfig{
+		c: openai.DefaultAzureConfig(apiKey, baseURL),
 	}
 }
 
-type Option func(*openai.ClientConfig)
-
-func WithBaseURL(url string) Option {
-	return func(c *openai.ClientConfig) {
-		c.BaseURL = url
+func WithOpenAIConfig(config openai.ClientConfig) pconf.Config {
+	return &openaiConfig{
+		c: config,
 	}
 }
 
-func WithAzureConfig(apiKey, baseURL string) Option {
-	return func(c *openai.ClientConfig) {
-		*c = openai.DefaultAzureConfig(apiKey, baseURL)
+func (OpenAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+	client_config := pconf.GeneralConfig{}
+	var openai_config *openai.ClientConfig
+	for i := range configs {
+		switch v := configs[i].(type) {
+		case *openaiConfig:
+			openai_config = &v.c
+		default:
+			configs[i].Apply(&client_config)
+		}
 	}
+
+	if openai_config == nil {
+		if client_config.APIKey == "" {
+			return nil, ErrAPIKeyRequired
+		}
+		v := openai.DefaultConfig(client_config.APIKey)
+		openai_config = &v
+	}
+
+	if client_config.BaseURL != "" {
+		openai_config.BaseURL = client_config.BaseURL
+	}
+
+	return &OpenAIClient{
+		client: openai.NewClientWithConfig(*openai_config),
+	}, nil
 }
 
-func WithOpenAIConfig(config openai.ClientConfig) Option {
-	return func(c *openai.ClientConfig) {
-		*c = config
-	}
-}
+const ProviderName = "openai"
 
-func NewClient(apiKey string, opts ...Option) *openai.Client {
-	config := openai.DefaultConfig(apiKey)
-	for _, opt := range opts {
-		opt(&config)
-	}
-	return openai.NewClientWithConfig(config)
-}
+var Provider OpenAIProvider

@@ -14,7 +14,7 @@ type LLMClient interface {
 }
 
 type LLMProvider interface {
-	NewClient(ctx context.Context, options ...pconf.Config) (LLMClient, error)
+	NewClient(ctx context.Context, configs ...pconf.Config) (LLMClient, error)
 }
 
 type TTSClient interface {
@@ -22,7 +22,7 @@ type TTSClient interface {
 }
 
 type TTSProvider interface {
-	NewClient(ctx context.Context, options ...pconf.Config) (TTSClient, error)
+	NewClient(ctx context.Context, configs ...pconf.Config) (TTSClient, error)
 }
 
 type EmbeddingClient interface {
@@ -30,5 +30,5 @@ type EmbeddingClient interface {
 }
 
 type EmbeddingProvider interface {
-	NewClient(ctx context.Context, options ...pconf.Config) (EmbeddingClient, error)
+	NewClient(ctx context.Context, configs ...pconf.Config) (EmbeddingClient, error)
 }

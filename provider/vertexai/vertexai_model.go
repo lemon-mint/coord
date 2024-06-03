@@ -1,21 +1,23 @@
-package generativelanguage
+package vertexai
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
+	"github.com/lemon-mint/coord/internal/callid"
+	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llm/internal/callid"
-	"github.com/lemon-mint/coord/llm/internal/iutils"
+	"github.com/lemon-mint/coord/pconf"
+	"github.com/lemon-mint/coord/provider"
 
-	"github.com/google/generative-ai-go/genai"
+	"cloud.google.com/go/vertexai/genai"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
-var _ llm.LLM = (*GenerativeLanguageModel)(nil)
+var _ llm.LLM = (*vertexAIModel)(nil)
 
-func convTypeGenerativeLanguage(t llm.OpenAPIType) genai.Type {
+func convTypeVertexAI(t llm.OpenAPIType) genai.Type {
 	switch t {
 	case llm.OpenAPITypeString:
 		return genai.TypeString
@@ -34,7 +36,7 @@ func convTypeGenerativeLanguage(t llm.OpenAPIType) genai.Type {
 	return genai.TypeUnspecified
 }
 
-func convertSchemaGenerativeLanguage(s *llm.Schema, cache map[*llm.Schema]*genai.Schema) *genai.Schema {
+func convertSchemaVertexAI(s *llm.Schema, cache map[*llm.Schema]*genai.Schema) *genai.Schema {
 	if s == nil {
 		return nil
 	}
@@ -48,7 +50,7 @@ func convertSchemaGenerativeLanguage(s *llm.Schema, cache map[*llm.Schema]*genai
 	}
 
 	schema := &genai.Schema{
-		Type:        convTypeGenerativeLanguage(s.Type),
+		Type:        convTypeVertexAI(s.Type),
 		Description: s.Description,
 		Nullable:    s.Nullable,
 		Format:      s.Format,
@@ -67,11 +69,11 @@ func convertSchemaGenerativeLanguage(s *llm.Schema, cache map[*llm.Schema]*genai
 	case llm.OpenAPITypeInteger:
 	case llm.OpenAPITypeBoolean:
 	case llm.OpenAPITypeArray:
-		schema.Items = convertSchemaGenerativeLanguage(s.Items, cache)
+		schema.Items = convertSchemaVertexAI(s.Items, cache)
 	case llm.OpenAPITypeObject:
 		schema.Properties = make(map[string]*genai.Schema, len(s.Properties))
 		for k, v := range s.Properties {
-			schema.Properties[k] = convertSchemaGenerativeLanguage(v, cache)
+			schema.Properties[k] = convertSchemaVertexAI(v, cache)
 		}
 		schema.Required = s.Required
 	}
@@ -79,17 +81,17 @@ func convertSchemaGenerativeLanguage(s *llm.Schema, cache map[*llm.Schema]*genai
 	return schema
 }
 
-func convertFunctionDeclarationGenerativeLanguage(f *llm.FunctionDeclaration) *genai.FunctionDeclaration {
+func convertFunctionDeclarationVertexAI(f *llm.FunctionDeclaration) *genai.FunctionDeclaration {
 	decl := genai.FunctionDeclaration{
 		Name:        f.Name,
 		Description: f.Description,
-		Parameters:  convertSchemaGenerativeLanguage(f.Schema, nil),
+		Parameters:  convertSchemaVertexAI(f.Schema, nil),
 	}
 
 	return &decl
 }
 
-func convertContentGenerativeLanguage(s *llm.Content) *genai.Content {
+func convertContentVertexAI(s *llm.Content) *genai.Content {
 	content := &genai.Content{
 		Role: string(s.Role),
 	}
@@ -106,7 +108,7 @@ func convertContentGenerativeLanguage(s *llm.Content) *genai.Content {
 		case *llm.FileData:
 			content.Parts = append(content.Parts, genai.FileData{
 				MIMEType: p.MIMEType,
-				URI:      p.FileURI,
+				FileURI:  p.FileURI,
 			})
 		case *llm.FunctionCall:
 			content.Parts = append(content.Parts, genai.FunctionCall{
@@ -136,17 +138,17 @@ func convertContentGenerativeLanguage(s *llm.Content) *genai.Content {
 	return content
 }
 
-func convertContextGenerativeLanguage(c *llm.ChatContext) []*genai.Content {
+func convertContextVertexAI(c *llm.ChatContext) []*genai.Content {
 	var contents []*genai.Content = make([]*genai.Content, len(c.Contents))
 
 	for i := range c.Contents {
-		contents[i] = convertContentGenerativeLanguage(c.Contents[i])
+		contents[i] = convertContentVertexAI(c.Contents[i])
 	}
 
 	return contents
 }
 
-func convertGenerativeLanguageContent(c *genai.Content) *llm.Content {
+func convertVertexAIContent(c *genai.Content) *llm.Content {
 	lc := &llm.Content{
 		Role:  llm.Role(c.Role),
 		Parts: make([]llm.Segment, len(c.Parts)),
@@ -179,13 +181,16 @@ func convertGenerativeLanguageContent(c *genai.Content) *llm.Content {
 	return lc
 }
 
-func convertGenerativeLanguageFinishReason(stop_reason genai.FinishReason) llm.FinishReason {
+func convertVertexAIFinishReason(stop_reason genai.FinishReason) llm.FinishReason {
 	switch stop_reason {
 	case genai.FinishReasonStop:
 		return llm.FinishReasonStop
 	case genai.FinishReasonMaxTokens:
 		return llm.FinishReasonMaxTokens
-	case genai.FinishReasonSafety:
+	case genai.FinishReasonSafety,
+		genai.FinishReasonBlocklist,
+		genai.FinishReasonProhibitedContent,
+		genai.FinishReasonSpii:
 		return llm.FinishReasonSafety
 	case genai.FinishReasonRecitation:
 		return llm.FinishReasonRecitation
@@ -196,15 +201,15 @@ func convertGenerativeLanguageFinishReason(stop_reason genai.FinishReason) llm.F
 	return llm.FinishReasonUnknown
 }
 
-func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+func (g *vertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
 	if chat == nil {
 		chat = &llm.ChatContext{}
 	}
 
-	contents := convertContextGenerativeLanguage(chat)
+	contents := convertContextVertexAI(chat)
 	tools := make([]*genai.FunctionDeclaration, len(chat.Tools))
 	for i := range chat.Tools {
-		tools[i] = convertFunctionDeclarationGenerativeLanguage(chat.Tools[i])
+		tools[i] = convertFunctionDeclarationVertexAI(chat.Tools[i])
 	}
 
 	model := g.client.GenerativeModel(g.model)
@@ -323,7 +328,7 @@ func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 		model.Tools = nil
 	}
 
-	content := convertContentGenerativeLanguage(input)
+	content := convertContentVertexAI(input)
 	resp := session.SendMessageStream(
 		ctx,
 		content.Parts...,
@@ -338,7 +343,7 @@ func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
+			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
 		}()
 
 		for {
@@ -361,16 +366,16 @@ func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 
 			if len(resp.Candidates) > 0 {
 				if resp.Candidates[0].Content == nil {
-					v.FinishReason = convertGenerativeLanguageFinishReason(resp.Candidates[0].FinishReason)
+					v.FinishReason = convertVertexAIFinishReason(resp.Candidates[0].FinishReason)
 					v.Err = llm.ErrNoResponse
 					continue
 				}
 
 				if resp.Candidates[0].FinishReason != genai.FinishReasonUnspecified {
-					v.FinishReason = convertGenerativeLanguageFinishReason(resp.Candidates[0].FinishReason)
+					v.FinishReason = convertVertexAIFinishReason(resp.Candidates[0].FinishReason)
 				}
 
-				data := convertGenerativeLanguageContent(resp.Candidates[0].Content)
+				data := convertVertexAIContent(resp.Candidates[0].Content)
 				if v.Content.Role == "" {
 					v.Content.Role = data.Role
 				}
@@ -386,10 +391,12 @@ func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 				v.FinishReason = llm.FinishReasonUnknown
 				if resp.PromptFeedback != nil {
 					switch resp.PromptFeedback.BlockReason {
-					case genai.BlockReasonOther,
-						genai.BlockReasonUnspecified:
+					case genai.BlockedReasonOther,
+						genai.BlockedReasonUnspecified:
 						v.FinishReason = llm.FinishReasonUnknown
-					case genai.BlockReasonSafety:
+					case genai.BlockedReasonSafety,
+						genai.BlockedReasonBlocklist,
+						genai.BlockedReasonProhibitedContent:
 						v.FinishReason = llm.FinishReasonSafety
 					}
 				}
@@ -407,11 +414,11 @@ func (g *GenerativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 	return v
 }
 
-func (g *GenerativeLanguageModel) Name() string {
+func (g *vertexAIModel) Name() string {
 	return g.model
 }
 
-func (g *GenerativeLanguageModel) Close() error {
+func (g *vertexAIModel) Close() error {
 	return nil
 }
 
@@ -419,36 +426,79 @@ func ptrify[T any](v T) *T {
 	return &v
 }
 
-var defaultGenerativeLanguageConfig = &llm.Config{
+var defaultVertexAIConfig = &llm.Config{
 	Temperature:           ptrify(float32(0.4)),
 	MaxOutputTokens:       ptrify(2048),
-	SafetyFilterThreshold: llm.BlockLowAndAbove,
+	SafetyFilterThreshold: llm.BlockOnlyHigh,
 }
 
-type GenerativeLanguageModel struct {
+type vertexAIModel struct {
 	client *genai.Client
 	config *llm.Config
 	model  string
 }
 
-func NewModel(client *genai.Client, model string, config *llm.Config) *GenerativeLanguageModel {
+var _ provider.LLMClient = (*VertexAIClient)(nil)
+
+type VertexAIClient struct {
+	client *genai.Client
+}
+
+func (g *VertexAIClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
-		config = defaultGenerativeLanguageConfig
+		config = defaultVertexAIConfig
 	}
 
-	var _vm = &GenerativeLanguageModel{
-		client: client,
+	var _vm = &vertexAIModel{
+		client: g.client,
 		config: config,
 		model:  model,
 	}
 
-	return _vm
+	return _vm, nil
 }
 
-func NewClient(
-	ctx context.Context,
-	apikey string,
-	opts ...option.ClientOption,
-) (*genai.Client, error) {
-	return genai.NewClient(ctx, append([]option.ClientOption{option.WithAPIKey(apikey)}, opts...)...)
+var _ provider.LLMProvider = Provider
+
+type VertexAIProvider struct {
 }
+
+var (
+	ErrLocationRequired  error = errors.New("location is required")
+	ErrProjectIDRequired error = errors.New("project ID is required")
+)
+
+func (VertexAIProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+	client_config := pconf.GeneralConfig{}
+	for i := range configs {
+		configs[i].Apply(&client_config)
+	}
+
+	projectID := client_config.ProjectID
+	location := client_config.Location
+	client_options := client_config.GoogleClientOptions
+	if client_config.UseREST {
+		client_options = append(client_options, genai.WithREST())
+	}
+
+	if projectID == "" {
+		return nil, ErrProjectIDRequired
+	}
+
+	if location == "" {
+		return nil, ErrLocationRequired
+	}
+
+	genaiClient, err := genai.NewClient(ctx, projectID, location, client_options...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &VertexAIClient{
+		client: genaiClient,
+	}, nil
+}
+
+const ProviderName = "vertexai"
+
+var Provider VertexAIProvider

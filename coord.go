@@ -37,6 +37,13 @@ func RegisterLLMProvider(name string, p provider.LLMProvider) {
 	llmProviders[name] = p
 }
 
+// RemoveLLMProvider removes a llm provider.
+func RemoveLLMProvider(name string) {
+	llmProvidersMu.Lock()
+	defer llmProvidersMu.Unlock()
+	delete(llmProviders, name)
+}
+
 // TTSProviders returns the names of the registered tts providers.
 func TTSProviders() []string {
 	ttsProvidersMu.RLock()
@@ -56,6 +63,13 @@ func RegisterTTSProvider(name string, p provider.TTSProvider) {
 	ttsProviders[name] = p
 }
 
+// RemoveTTSProvider removes a tts provider.
+func RemoveTTSProvider(name string) {
+	ttsProvidersMu.Lock()
+	defer ttsProvidersMu.Unlock()
+	delete(ttsProviders, name)
+}
+
 // EmbeddingProviders returns the names of the registered embedding providers.
 func EmbeddingProviders() []string {
 	embeddingProvidersMu.RLock()
@@ -73,4 +87,11 @@ func RegisterEmbeddingProvider(name string, p provider.EmbeddingProvider) {
 	embeddingProvidersMu.Lock()
 	defer embeddingProvidersMu.Unlock()
 	embeddingProviders[name] = p
+}
+
+// RemoveEmbeddingProvider removes an embedding provider.
+func RemoveEmbeddingProvider(name string) {
+	embeddingProvidersMu.Lock()
+	defer embeddingProvidersMu.Unlock()
+	delete(embeddingProviders, name)
 }

@@ -1,4 +1,4 @@
-package iutils
+package llmutils
 
 import "github.com/lemon-mint/coord/llm"
 

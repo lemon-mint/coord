@@ -7,7 +7,11 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/lemon-mint/coord/internal/useragent"
 )
+
+var UserAgent *string = ptrify(useragent.HTTPUserAgent)
 
 type anthropicRole string
 
@@ -102,7 +106,7 @@ type anthropicCreateMessagesResponse struct {
 	Stream       bool               `json:"stream"`
 }
 
-func (c *AnthropicClient) createMessages(req *anthropicCreateMessagesRequest) (*anthropicCreateMessagesResponse, error) {
+func (c *anthropicClient) createMessages(req *anthropicCreateMessagesRequest) (*anthropicCreateMessagesResponse, error) {
 	url, err := url.JoinPath(c.baseURL, "./messages")
 	if err != nil {
 		return nil, err
@@ -118,6 +122,9 @@ func (c *AnthropicClient) createMessages(req *anthropicCreateMessagesRequest) (*
 		return nil, err
 	}
 	r.Header.Set("Content-Type", "application/json")
+	if UserAgent != nil {
+		r.Header.Set("User-Agent", *UserAgent)
+	}
 
 	if err := c.authHandler(r); err != nil {
 		return nil, err
@@ -148,7 +155,7 @@ var anthropicHTTPClient *http.Client = &http.Client{
 	},
 }
 
-type AnthropicClient struct {
+type anthropicClient struct {
 	baseURL     string
 	authHandler func(r *http.Request) error
 
@@ -157,9 +164,9 @@ type AnthropicClient struct {
 
 const anthropicBaseURL = "https://api.anthropic.com/v1"
 
-func NewClient(apikey string) (*AnthropicClient, error) {
+func newClient(apikey string) (*anthropicClient, error) {
 	apikey = strings.TrimSpace(apikey)
-	return &AnthropicClient{
+	return &anthropicClient{
 		baseURL: anthropicBaseURL,
 		authHandler: func(r *http.Request) error {
 			r.Header.Set("X-API-Key", apikey)

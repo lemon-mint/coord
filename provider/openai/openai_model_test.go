@@ -1,32 +1,41 @@
-package generativelanguage_test
+package openai_test
 
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llm/generativelanguage"
+	"github.com/lemon-mint/coord/pconf"
+	"github.com/lemon-mint/coord/provider"
+	"github.com/lemon-mint/coord/provider/openai"
 	"gopkg.eu.org/envloader"
 )
 
-var client *genai.Client = func() *genai.Client {
-	envloader.LoadEnvFile("../../.env")
+var client provider.LLMClient = func() provider.LLMClient {
+	type Config struct {
+		APIKey string `env:"OPENAI_API_KEY"`
+	}
+	c := &Config{}
 
-	client, err := generativelanguage.NewClient(
+	envloader.LoadAndBindEnvFile("../../.env", c)
+
+	client, err := openai.Provider.NewClient(
 		context.Background(),
-		os.Getenv("GEMINI_API_KEY"),
+		pconf.WithAPIKey(c.APIKey),
 	)
 	if err != nil {
 		panic(err)
 	}
+
 	return client
 }()
 
-func TestGenerativeLanguageGenerate(t *testing.T) {
-	var model llm.LLM = generativelanguage.NewModel(client, "gemini-pro", nil)
+func TestAnthropicGenerate(t *testing.T) {
+	model, err := client.NewModel("gpt-3.5-turbo", nil)
+	if err != nil {
+		panic(err)
+	}
 	defer model.Close()
 
 	output := model.GenerateStream(

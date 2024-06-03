@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/vertexai v0.10.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/generative-ai-go v0.13.0
-	github.com/ollama/ollama v0.1.39
+	github.com/ollama/ollama v0.1.41
 	github.com/sashabaranov/go-openai v1.24.1
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.23.0
@@ -21,7 +21,7 @@ require (
 require (
 	cloud.google.com/go v0.114.0 // indirect
 	cloud.google.com/go/ai v0.6.0 // indirect
-	cloud.google.com/go/auth v0.5.0 // indirect
+	cloud.google.com/go/auth v0.5.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v1.1.8 // indirect

@@ -6,28 +6,31 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 
+	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llm/internal/iutils"
+	"github.com/lemon-mint/coord/pconf"
+	"github.com/lemon-mint/coord/provider"
 
 	"github.com/valyala/fastjson"
 )
 
-var _ llm.LLM = (*AnthropicModel)(nil)
+var _ llm.LLM = (*anthropicModel)(nil)
 
-type AnthropicModel struct {
-	client *AnthropicClient
+type anthropicModel struct {
+	client *anthropicClient
 	config *llm.Config
 	model  string
 }
 
-func (g *AnthropicModel) Name() string {
+func (g *anthropicModel) Name() string {
 	return g.model
 }
 
-func (g *AnthropicModel) Close() error {
+func (g *anthropicModel) Close() error {
 	return nil
 }
 
@@ -36,7 +39,7 @@ var (
 	_sse_Data  = []byte("data: ")
 )
 
-func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
 	if chat == nil {
 		chat = &llm.ChatContext{}
 	}
@@ -290,7 +293,7 @@ func (g *AnthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 		}
 
 		v.Content = convertAnthropicContent(response)
-		v.Content.Parts = iutils.MergeTexts(v.Content.Parts)
+		v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
 		v.FinishReason = convertAnthropicFinishReason(response.StopReason)
 		if response.Usage != nil {
 			v.UsageData = &llm.UsageData{
@@ -442,14 +445,57 @@ var defaultAnthropicConfig = &llm.Config{
 	MaxOutputTokens: ptrify(2048),
 }
 
-func NewModel(client *AnthropicClient, model string, config *llm.Config) *AnthropicModel {
+var _ provider.LLMClient = (*AnthropicClient)(nil)
+
+type AnthropicClient struct {
+	client *anthropicClient
+}
+
+func (g *AnthropicClient) NewModel(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
 		config = defaultAnthropicConfig
 	}
 
-	return &AnthropicModel{
-		client: client,
+	var _vm = &anthropicModel{
+		client: g.client,
 		model:  model,
 		config: config,
 	}
+
+	return _vm, nil
 }
+
+var _ provider.LLMProvider = Provider
+
+type AnthropicProvider struct {
+}
+
+var (
+	ErrAPIKeyRequired error = errors.New("api key is required")
+)
+
+func (AnthropicProvider) NewClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+	client_config := pconf.GeneralConfig{}
+	for i := range configs {
+		configs[i].Apply(&client_config)
+	}
+
+	apiKey := client_config.APIKey
+
+	if apiKey == "" {
+		return nil, ErrAPIKeyRequired
+	}
+
+	_anthropicClient, err := newClient(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnthropicClient{
+		client: _anthropicClient,
+	}, nil
+}
+
+const ProviderName = "anthropic"
+
+var Provider AnthropicProvider
