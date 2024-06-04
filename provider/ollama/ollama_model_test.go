@@ -10,7 +10,7 @@ import (
 	"github.com/lemon-mint/coord/provider/ollama"
 )
 
-var client provider.LLMClient = func() provider.LLMClient {
+func getClient() provider.LLMClient {
 	client, err := ollama.Provider.NewLLMClient(
 		context.Background(),
 	)
@@ -19,9 +19,12 @@ var client provider.LLMClient = func() provider.LLMClient {
 	}
 
 	return client
-}()
+}
 
 func TestOllamaGenerate(t *testing.T) {
+	client := getClient()
+	defer client.Close()
+
 	model, err := client.NewLLM("llama3:latest", nil)
 	if err != nil {
 		panic(err)

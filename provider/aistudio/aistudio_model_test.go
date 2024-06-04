@@ -12,7 +12,7 @@ import (
 	"gopkg.eu.org/envloader"
 )
 
-var client provider.LLMClient = func() provider.LLMClient {
+func getClient() provider.LLMClient {
 	type Config struct {
 		APIKey string `env:"AISTUDIO_API_KEY"`
 	}
@@ -29,9 +29,12 @@ var client provider.LLMClient = func() provider.LLMClient {
 	}
 
 	return client
-}()
+}
 
 func TestAIStudioGenerate(t *testing.T) {
+	client := getClient()
+	defer client.Close()
+
 	model, err := client.NewLLM("gemini-1.5-flash-latest", nil)
 	if err != nil {
 		panic(err)

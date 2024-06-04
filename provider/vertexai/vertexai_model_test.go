@@ -12,7 +12,7 @@ import (
 	"gopkg.eu.org/envloader"
 )
 
-var client provider.LLMClient = func() provider.LLMClient {
+func getClient() provider.LLMClient {
 	type Config struct {
 		Location  string `env:"LOCATION"`
 		ProjectID string `env:"PROJECT_ID"`
@@ -31,9 +31,12 @@ var client provider.LLMClient = func() provider.LLMClient {
 	}
 
 	return client
-}()
+}
 
 func TestVertexAIGenerate(t *testing.T) {
+	client := getClient()
+	defer client.Close()
+
 	model, err := client.NewLLM("gemini-1.5-flash-001", nil)
 	if err != nil {
 		panic(err)

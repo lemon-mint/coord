@@ -12,7 +12,7 @@ import (
 	"gopkg.eu.org/envloader"
 )
 
-var client provider.LLMClient = func() provider.LLMClient {
+func getClient() provider.LLMClient {
 	type Config struct {
 		APIKey string `env:"OPENAI_API_KEY"`
 	}
@@ -29,9 +29,12 @@ var client provider.LLMClient = func() provider.LLMClient {
 	}
 
 	return client
-}()
+}
 
 func TestOpenAIGenerate(t *testing.T) {
+	client := getClient()
+	defer client.Close()
+
 	model, err := client.NewLLM("gpt-3.5-turbo", nil)
 	if err != nil {
 		panic(err)
