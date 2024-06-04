@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lemon-mint/coord/internal/useragent"
+	"github.com/lemon-mint/coord/llm"
 )
 
 var UserAgent *string = ptrify(useragent.HTTPUserAgent)
@@ -28,11 +29,12 @@ type anthropicMessage struct {
 type anthropicSegmentType string
 
 const (
-	anthropicSegmentText       anthropicSegmentType = "text"
-	anthropicSegmentTextDelta  anthropicSegmentType = "text_delta"
-	anthropicSegmentImage      anthropicSegmentType = "image"
-	anthropicSegmentToolUse    anthropicSegmentType = "tool_use"
-	anthropicSegmentToolResult anthropicSegmentType = "tool_result"
+	anthropicSegmentText           anthropicSegmentType = "text"
+	anthropicSegmentTextDelta      anthropicSegmentType = "text_delta"
+	anthropicSegmentInputJSONDelta anthropicSegmentType = "input_json_delta"
+	anthropicSegmentImage          anthropicSegmentType = "image"
+	anthropicSegmentToolUse        anthropicSegmentType = "tool_use"
+	anthropicSegmentToolResult     anthropicSegmentType = "tool_result"
 )
 
 type anthropicSegment struct {
@@ -42,9 +44,10 @@ type anthropicSegment struct {
 
 	Source *anthropicFileData `json:"source,omitempty"` // file data for image
 
-	ID    string                 `json:"id,omitempty"`    // id for tool_use
-	Name  string                 `json:"name,omitempty"`  // name for tool_use
-	Input map[string]interface{} `json:"input,omitempty"` // input data for tool_use
+	ID        string                 `json:"id,omitempty"`    // id for tool_use
+	Name      string                 `json:"name,omitempty"`  // name for tool_use
+	InputJSON []byte                 `json:"-"`               // raw json input data for tool_use
+	Input     map[string]interface{} `json:"input,omitempty"` // input data for tool_use
 
 	ToolUseID string             `json:"tool_use_id,omitempty"` // id for tool_result
 	Content   []anthropicSegment `json:"content,omitempty"`     // nested segments for tool_result
@@ -57,26 +60,34 @@ type anthropicFileData struct {
 	Data      string `json:"data,omitempty"`       // base64-encoded image data
 }
 
+type anthropicTool struct {
+	Name        string      `json:"name"`         // Name of the tool
+	Description string      `json:"description"`  // Description of the tool
+	InputSchema *llm.Schema `json:"input_schema"` // Input schema for the tool
+}
+
 type anthropicCreateMessagesRequest struct {
-	AnthropicVersion string `json:"anthropic_version,omitempty"`
+	AnthropicVersion string `json:"anthropic_version,omitempty"` // Anthropic API version
 
-	Model     string             `json:"model"`
-	Messages  []anthropicMessage `json:"messages"`
-	MaxTokens int                `json:"max_tokens"`
+	Model     string             `json:"model"`      // Name of the Anthropic model to use
+	Messages  []anthropicMessage `json:"messages"`   // List of messages to send to the model
+	MaxTokens int                `json:"max_tokens"` // Maximum number of tokens to generate
 
-	SystemPrompt  string                           `json:"system,omitempty"`
-	MetaData      *anthropicCreateMessagesMetaData `json:"metadata,omitempty"`
-	StopSequences []string                         `json:"stop_sequences,omitempty"`
+	SystemPrompt  string                           `json:"system,omitempty"`         // System prompt for the model
+	MetaData      *anthropicCreateMessagesMetaData `json:"metadata,omitempty"`       // Metadata for the request
+	StopSequences []string                         `json:"stop_sequences,omitempty"` // List of stop sequences for the model
 
-	Temperature *float32 `json:"temperature,omitempty"`
-	TopP        *float32 `json:"top_p,omitempty"`
-	TopK        *int     `json:"top_k,omitempty"`
+	Tools []anthropicTool `json:"tools"` // List of tools to use in the conversation
 
-	Stream bool `json:"stream"`
+	Temperature *float32 `json:"temperature,omitempty"` // Temperature parameter for the model
+	TopP        *float32 `json:"top_p,omitempty"`       // Top-p parameter for the model
+	TopK        *int     `json:"top_k,omitempty"`       // Top-k parameter for the model
+
+	Stream bool `json:"stream"` // Stream responses
 }
 
 type anthropicCreateMessagesMetaData struct {
-	UserID string `json:"user_id"`
+	UserID string `json:"user_id"` // User ID for the request
 }
 
 type anthropicStopReason string

@@ -68,6 +68,7 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 			Messages:      msgs,
 			SystemPrompt:  g.config.SystemInstruction,
 			StopSequences: g.config.StopSequences,
+			Tools:         convertToolsAnthropic(chat.Tools),
 			Temperature:   g.config.Temperature,
 			TopP:          g.config.TopP,
 			TopK:          g.config.TopK,
@@ -230,12 +231,34 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 					// 		"text":""
 					// 	}
 					// }
+					//
+					// {
+					// 	"type":"content_block_start",
+					// 	"index":1,
+					// 	"content_block":{
+					// 	 	"type":"tool_use",
+					// 	 	"id":"toolu_01T1x1fJ34qAmk2tNTrN7Up6",
+					// 	 	"name":"get_weather",
+					// 	 	"input":{}
+					// 	}
+					// }
 
 					content_block := ae.Get("content_block")
 					var c anthropicSegment
 					anthropicMapContent(content_block, &c)
+
+					index, err := ae.Get("index").Int()
+					if err != nil {
+						v.Err = err
+						return
+					}
+					if index != len(response.Content) {
+						v.Err = llm.ErrInvalidResponse
+						return
+					}
 					response.Content = append(response.Content, c)
-					if c.Type == "text" && len(c.Text) > 0 {
+
+					if c.Type == anthropicSegmentText && len(c.Text) > 0 {
 						select {
 						case stream <- llm.Text(c.Text):
 						case <-ctx.Done():
@@ -252,14 +275,34 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 					// 		"text":"Hello"
 					// 	}
 					// }
+					//
+					// {
+					//    "type":"content_block_delta",
+					//    "index":1,
+					//    "delta":{
+					//       "type":"input_json_delta",
+					//       "partial_json":"{\"location\":"
+					//    }
+					// }
 
 					delta := ae.Get("delta")
+					index, err := ae.Get("index").Int()
+					if err != nil {
+						v.Err = err
+						return
+					}
+
+					if index < 0 || index >= len(response.Content) {
+						v.Err = llm.ErrInvalidResponse
+						return
+					}
+
 					var c anthropicSegment
 					anthropicMapContent(delta, &c)
 					switch c.Type {
 					case anthropicSegmentTextDelta:
-						response.Content = append(response.Content, c)
 						if len(c.Text) > 0 {
+							response.Content[index].Text += c.Text
 							select {
 							case stream <- llm.Text(c.Text):
 							case <-ctx.Done():
@@ -267,8 +310,10 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 								return
 							}
 						}
-					case anthropicSegmentToolUse:
-						// TODO: Handle tool_use on streaming
+					case anthropicSegmentInputJSONDelta:
+						if len(c.InputJSON) > 0 {
+							response.Content[index].InputJSON = append(response.Content[index].InputJSON, c.InputJSON...)
+						}
 					default:
 						response.Content = append(response.Content, c)
 					}
@@ -277,6 +322,37 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 					// 	"type":"content_block_stop",
 					// 	"index":0
 					// }
+
+					index, err := ae.Get("index").Int()
+					if err != nil {
+						v.Err = err
+						return
+					}
+
+					if index < 0 || index >= len(response.Content) {
+						v.Err = llm.ErrInvalidResponse
+						return
+					}
+
+					switch response.Content[index].Type {
+					case anthropicSegmentToolUse:
+						err := json.Unmarshal(response.Content[index].InputJSON, &response.Content[index].Input)
+						if err != nil {
+							v.Err = err
+							return
+						}
+
+						select {
+						case stream <- &llm.FunctionCall{
+							Name: response.Content[index].Name,
+							ID:   response.Content[index].ID,
+							Args: response.Content[index].Input,
+						}:
+						case <-ctx.Done():
+							v.Err = ctx.Err()
+							return
+						}
+					}
 				case "error":
 					// {
 					// 	"error":{
@@ -320,7 +396,10 @@ func anthropicMapContent(content *fastjson.Value, c *anthropicSegment) {
 		c.Source.MediaType = string(content.Get("source", "media_type").GetStringBytes())
 		c.Source.Data = string(content.Get("source", "data").GetStringBytes())
 	case anthropicSegmentToolUse:
-	case anthropicSegmentToolResult:
+		c.Name = string(content.Get("name").GetStringBytes())
+		c.ID = string(content.Get("id").GetStringBytes())
+	case anthropicSegmentInputJSONDelta:
+		c.InputJSON = content.Get("partial_json").GetStringBytes()
 	}
 }
 
@@ -353,11 +432,11 @@ func convertContentAnthropic(s *llm.Content) anthropicMessage {
 			}
 		case *llm.FunctionCall:
 			a.Type = anthropicSegmentToolUse
-			a.Input = v.Args
+			a.Name = v.Name
 			a.ID = v.ID
+			a.Input = v.Args
 		case *llm.FunctionResponse:
 			a.Type = anthropicSegmentToolResult
-			a.Name = v.Name
 			a.ToolUseID = v.ID
 			a.IsError = v.IsError
 
@@ -421,6 +500,20 @@ func convertContextAnthropic(c *llm.ChatContext) []anthropicMessage {
 	}
 
 	return contents
+}
+
+func convertToolsAnthropic(c []*llm.FunctionDeclaration) []anthropicTool {
+	var tools []anthropicTool = make([]anthropicTool, len(c))
+
+	for i := range c {
+		tools[i] = anthropicTool{
+			Name:        c[i].Name,
+			Description: c[i].Description,
+			InputSchema: c[i].Schema,
+		}
+	}
+
+	return tools
 }
 
 func convertAnthropicFinishReason(stop_reason string) llm.FinishReason {
