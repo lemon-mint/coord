@@ -112,6 +112,17 @@ type StreamContent struct {
 	Stream <-chan Segment `json:"-"` // Token Stream
 }
 
+func (g *StreamContent) Wait() error {
+	if g == nil {
+		return ErrNoResponse
+	}
+
+	for range g.Stream {
+	}
+
+	return g.Err
+}
+
 type LLM interface {
 	GenerateStream(ctx context.Context, chat *ChatContext, input *Content) *StreamContent
 	Close() error
