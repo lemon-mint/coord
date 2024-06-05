@@ -1,5 +1,8 @@
 # Coord
 
+[![GitHub](https://img.shields.io/github/license/lemon-mint/coord?style=for-the-badge)](https://github.com/lemon-mint/coord/blob/main/LICENSE)
+[![Go Reference](https://img.shields.io/badge/go-reference-%23007d9c?style=for-the-badge&logo=go)](https://pkg.go.dev/github.com/lemon-mint/coord)
+
 ![Coord](https://github.com/lemon-mint/coord/assets/55233766/59c5db0a-f496-4c34-9838-a321bac7a8b4)
 
 ## What is Coord?
