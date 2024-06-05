@@ -2,20 +2,36 @@ package softcall
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/lemon-mint/coord/internal/callid"
+	"github.com/lemon-mint/coord/internal/llmutils"
 	"github.com/lemon-mint/coord/llm"
 
 	yaml "github.com/goccy/go-yaml"
 )
 
-type YAMLSoftCallLLM struct {
-	upstream llm.LLM
+type SoftCallConfig struct {
+	PreserveReasoning bool
 }
 
-func NewYAMLSoftCallLLM(upstream llm.LLM) *YAMLSoftCallLLM {
-	return &YAMLSoftCallLLM{upstream: upstream}
+type YAMLSoftCallLLM struct {
+	upstream llm.LLM
+	config   SoftCallConfig
+}
+
+var defaultConfig = &SoftCallConfig{
+	PreserveReasoning: false,
+}
+
+func NewYAMLSoftCallLLM(upstream llm.LLM, config *SoftCallConfig) *YAMLSoftCallLLM {
+	if config == nil {
+		config = defaultConfig
+	}
+
+	return &YAMLSoftCallLLM{upstream: upstream, config: *config}
 }
 
 var _ llm.LLM = (*YAMLSoftCallLLM)(nil)
@@ -26,10 +42,11 @@ const yamlPrompt = `Here are the tools available for you to use in answering the
 To call a tool, use a <tool_call> block like this:
 
 <tool_call>
-name: 'function_name'
+name: |-
+	function_name
 parameters:
   arg0: 42
-  arg1: >
+  arg1: |
     print("Hello, World!")
 </tool_call>
 
@@ -39,7 +56,9 @@ First, perform any necessary reasoning in a <reasoning> block. If at any point d
 
 You must wait for the user to provide <tool_response> before providing a final response.
 
-After you have finished all reasoning and tool usage, provide your final answer to the question for the user. There is no need to use any special formatting for your final answer.`
+After you have finished all reasoning and tool usage, provide your final answer to the question for the user. There is no need to use any special formatting for your final answer.
+
+Always use YAML literal style when representing strings in YAML.`
 
 const yamlPromptResonse = `<reasoning>I should follow the instructions above.</reasoning>
 
@@ -50,9 +69,11 @@ const yamlTestFunction = `Call test_function0 with apple = "1" arg.`
 const yamlTestFunctionResonse = `<reasoning>I should call the test_function0 that the user requested.</reasoning>
 
 <tool_call>
-name: 'test_function0'
+name: |-
+	test_function0
 parameters:
-	apple: "1"
+	apple: |-
+		1
 </tool_call>`
 
 const yamlTestToolResult = `<tool_response>
@@ -61,7 +82,7 @@ exit_code: 0
 
 const yamlTestToolResultResonse = `<reasoning>I should return the exit code of 0.</reasoning>
 
-the test_function0 exited with exit code 0.`
+The test_function0 exited with exit code 0.`
 
 func yamlFuncDecl(tools []*llm.FunctionDeclaration) string {
 	if len(tools) == 0 {
@@ -72,7 +93,10 @@ func yamlFuncDecl(tools []*llm.FunctionDeclaration) string {
 
 	sb.WriteString("<tools>\n")
 	for _, tool := range tools {
-		data, err := yaml.Marshal(tool)
+		data, err := yaml.MarshalWithOptions(tool,
+			yaml.Indent(2),
+			yaml.UseLiteralStyleIfMultiline(true),
+		)
 		if err != nil {
 			continue
 		}
@@ -113,7 +137,14 @@ L:
 		case *llm.FunctionCall:
 			var sb strings.Builder
 
-			data, err := yaml.Marshal(v.Args)
+			var call yamlCall
+			call.Name = v.Name
+			call.Parameters = v.Args
+
+			data, err := yaml.MarshalWithOptions(&call,
+				yaml.Indent(2),
+				yaml.UseLiteralStyleIfMultiline(true),
+			)
 			if err != nil {
 				data = []byte("name: tool_call_failed\n")
 			}
@@ -126,27 +157,41 @@ L:
 		case *llm.FunctionResponse:
 			var sb strings.Builder
 
-			data, err := yaml.Marshal(v.Content)
+			data, err := json.Marshal(v.Content)
 			if err != nil {
-				data = []byte("error: >\n  RPCError: Failed to marshal the args (HTTP 500)")
+				data = []byte("error: |-\n  RPCError: Failed to marshal the args (HTTP 500)")
 			}
 
 			sb.WriteString("\n\n<tool_response>\n")
 			sb.WriteString(string(data))
 			sb.WriteString("\n</tool_response>")
+
+			content.Parts[i] = llm.Text(sb.String())
 		}
 	}
 
 	return content
 }
 
-func (y *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
+func min(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+type yamlCall struct {
+	Name       string                 `yaml:"name"`
+	Parameters map[string]interface{} `yaml:"parameters"`
+}
+
+func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
 	toolsDecl := yamlFuncDecl(chat.Tools)
 	if toolsDecl == "" {
-		return y.upstream.GenerateStream(ctx, chat, input)
+		return g.upstream.GenerateStream(ctx, chat, input)
 	}
 
-	messages := make([]*llm.Content, 0, len(chat.Contents))
+	messages := make([]*llm.Content, 0, len(chat.Contents)+6)
 
 	messages = append(messages, &llm.Content{
 		Role: llm.RoleUser,
@@ -199,13 +244,168 @@ func (y *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 	}
 	input = convertToYAMLContent(input)
 
-	return y.upstream.GenerateStream(ctx, chat, input)
+	stream := make(chan llm.Segment, 128)
+	v := &llm.StreamContent{
+		Content: &llm.Content{
+			Role: llm.RoleModel,
+		},
+		Stream: stream,
+	}
+
+	go func() {
+		defer close(stream)
+		defer func() {
+			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
+			if v.FinishReason == llm.FinishReasonStop {
+				for i := range v.Content.Parts {
+					if v.Content.Parts[i].Type() == llm.SegmentTypeFunctionCall {
+						v.FinishReason = llm.FinishReasonToolUse
+						break
+					}
+				}
+			}
+		}()
+
+		var head strings.Builder
+		var hold bool
+		var reasoning_block bool
+		var tool_call_block bool
+
+		resp := g.upstream.GenerateStream(ctx, chat, input)
+		for seg := range resp.Stream {
+			switch s := seg.(type) {
+			case llm.Text:
+				head.WriteString(string(s))
+
+				if !hold {
+					if strings.Contains(head.String(), "<") {
+						hold = true
+					} else {
+						hold = false
+					}
+				}
+
+				if hold {
+				L:
+					for {
+						idx := strings.Index(head.String(), "<")
+						if idx < 0 {
+							hold = false
+							break
+						}
+
+						if idx > 0 {
+							payload := llm.Text(head.String()[:idx])
+							v.Content.Parts = append(v.Content.Parts, payload)
+							select {
+							case stream <- payload:
+							case <-ctx.Done():
+								return
+							}
+							new_head := head.String()[idx:]
+							head.Reset()
+							head.WriteString(new_head)
+						}
+
+						switch {
+						case !g.config.PreserveReasoning && strings.HasPrefix("<reasoning>", head.String()[:min(len("<reasoning>"), head.Len())]):
+							reasoning_block = true
+						case strings.HasPrefix("<tool_call>", head.String()[:min(len("<tool_call>"), head.Len())]):
+							tool_call_block = true
+						default:
+							payload := llm.Text(head.String()[:1])
+							v.Content.Parts = append(v.Content.Parts, payload)
+							select {
+							case stream <- payload:
+							case <-ctx.Done():
+								return
+							}
+							new_head := head.String()[1:]
+							head.Reset()
+							head.WriteString(new_head)
+							continue L
+						}
+
+						if reasoning_block {
+							idx := strings.Index(head.String(), "</reasoning>")
+							if idx < 0 {
+								break
+							}
+							resoning_process := head.String()[:idx+len("<reasoning>")+1]
+							_ = resoning_process
+							reasoning_block = false
+							new_head := head.String()[idx+len("<reasoning>")+1:]
+							head.Reset()
+							head.WriteString(new_head)
+						}
+
+						if tool_call_block {
+							idx := strings.Index(head.String(), "</tool_call>")
+							if idx < 0 {
+								break
+							}
+							tool_call_body := head.String()[:idx+len("<tool_call>")+1]
+							reasoning_block = false
+							new_head := head.String()[idx+len("<tool_call>")+1:]
+							head.Reset()
+							head.WriteString(new_head)
+
+							var call yamlCall
+							err := yaml.Unmarshal(
+								[]byte(strings.TrimSuffix(strings.TrimPrefix(tool_call_body, "<tool_call>"), "</tool_call>")),
+								&call,
+							)
+							if err != nil {
+								payload := llm.Text(tool_call_body)
+								v.Content.Parts = append(v.Content.Parts, payload)
+								select {
+								case stream <- payload:
+								case <-ctx.Done():
+									return
+								}
+								break
+							}
+
+							payload := &llm.FunctionCall{
+								Name: call.Name,
+								ID:   callid.OpenAICallID(),
+								Args: call.Parameters,
+							}
+							v.Content.Parts = append(v.Content.Parts, payload)
+							select {
+							case stream <- payload:
+							case <-ctx.Done():
+								return
+							}
+						}
+					}
+				}
+
+				if !hold {
+					payload := llm.Text(head.String())
+					v.Content.Parts = append(v.Content.Parts, payload)
+					select {
+					case stream <- payload:
+						head.Reset()
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+
+		v.Err = resp.Err
+		v.UsageData = resp.UsageData
+		v.FinishReason = resp.FinishReason
+	}()
+
+	return v
 }
 
-func (y *YAMLSoftCallLLM) Close() error {
-	return y.upstream.Close()
+func (g *YAMLSoftCallLLM) Close() error {
+	return g.upstream.Close()
 }
 
-func (y *YAMLSoftCallLLM) Name() string {
-	return y.upstream.Name()
+func (g *YAMLSoftCallLLM) Name() string {
+	return g.upstream.Name()
 }

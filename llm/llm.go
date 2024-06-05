@@ -109,7 +109,7 @@ type StreamContent struct {
 	UsageData    *UsageData   `json:"usageData"`    // Only Available after Stream channel is closed (Note: UsageData is not available for all LLM providers)
 	FinishReason FinishReason `json:"finishReason"` // Only Available after Stream channel is closed
 
-	Stream <-chan Segment `json:"-"` // Token Stream
+	Stream <-chan Segment `json:"-"` // Response Stream
 }
 
 func (g *StreamContent) Wait() error {

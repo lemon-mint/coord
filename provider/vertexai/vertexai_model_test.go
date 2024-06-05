@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lemon-mint/coord/llm"
+	"github.com/lemon-mint/coord/llmutils/softcall"
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
 	"github.com/lemon-mint/coord/provider/vertexai"
@@ -77,6 +78,9 @@ func TestVertexAIToolCall(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	model = softcall.NewYAMLSoftCallLLM(model, &softcall.SoftCallConfig{
+		PreserveReasoning: true,
+	})
 	defer model.Close()
 
 	chat_context := &llm.ChatContext{
@@ -208,4 +212,6 @@ func TestVertexAIToolCall(t *testing.T) {
 		t.Error("expected output to contain \"25\", got ", output_texts)
 		return
 	}
+
+	panic("")
 }
