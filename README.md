@@ -7,8 +7,48 @@
 
 ## What is Coord?
 
-Coord is an advanced software solution designed to provide a seamless interface for integrating and interacting with various Large Language Models (LLMs). Its primary goal is to simplify the process of working with multiple LLMs by offering a unified platform that abstracts away the complexities of each model's unique interface and requirements.
+Coord is a Go library designed to simplify interactions with various AI services, providing a unified interface for Large Language Models (LLMs), Text-to-Speech (TTS) systems, and Embedding models.
 
-With Coord, developers and researchers can easily access and leverage the capabilities of different LLMs without the need to learn and adapt to each model's specific API or integration process. The platform handles the intricate details of model communication, data formatting, and result processing, allowing users to focus on their core tasks and objectives.
+This allows developers to seamlessly integrate and utilize different AI services without grappling with the complexities of each provider's specific APIs and requirements.
 
-Whether you're working on natural language processing tasks, content generation, question answering, or any other application that can benefit from the power of LLMs, Coord provides a streamlined and efficient way to harness the collective capabilities of multiple models. Its user-friendly interface and comprehensive documentation make it accessible to both novice and experienced users alike.
+## Key Features
+
+- **Unified Interface:**  Interact with LLMs, TTS, and Embedding models using a consistent API, reducing code complexity and learning curves.
+- **Abstraction:**  Coord handles the intricacies of model communication, data formatting, and result processing, letting you focus on your application logic.
+- **Flexibility:**  Easily switch between different LLM, TTS, or Embedding providers without significant code changes.
+
+## Use Cases
+
+Coord is ideal for a wide range of AI-powered applications, including:
+
+- **Chatbots and Conversational AI:** Build interactive chatbots that leverage the power of LLMs for natural language understanding and generation.
+- **Content Generation:** Generate high-quality text, articles, summaries, and more using various LLM providers.
+- **Speech Synthesis:**  Integrate natural-sounding speech into your applications with support for different TTS engines.
+- **Semantic Search and Recommendation:**  Utilize embedding models to power features like semantic search, similarity comparisons, and personalized recommendations.
+
+## Modules
+
+### LLM
+
+- Provides a standardized way to interact with various LLMs.
+- Supports streaming responses, chat history management, and function calling for enhanced interaction design.
+
+### TTS
+
+- Offers a unified interface for text-to-speech synthesis.
+- Supports different audio formats (MP3, WAV, OGG, etc.) for flexible output.
+
+### Embedding
+
+- Simplifies working with embedding models for text representation.
+- Supports various embedding tasks, including semantic similarity, classification, and clustering.
+
+## Getting Started
+
+- **Installation:** `go get -u github.com/lemon-mint/coord`
+- **Documentation:** [https://pkg.go.dev/github.com/lemon-mint/coord](https://pkg.go.dev/github.com/lemon-mint/coord)
+- **Examples:** Explore the examples directory for practical implementations.
+
+## Contributions
+
+Contributions to Coord are welcome!  Please submit issues or pull requests to help improve and expand the library.
