@@ -24,9 +24,9 @@ type textEmbedding struct {
 	outputDim int
 }
 
-func (t *textEmbedding) TextEmbedding(ctx context.Context, text string, task embedding.TaskType) ([]float64, error) {
-	base := fmt.Sprintf("projects/%s/locations/%s/publishers/google/models", t.project, t.location)
-	url := fmt.Sprintf("%s/%s", base, t.model)
+func (g *textEmbedding) TextEmbedding(ctx context.Context, text string, task embedding.TaskType) ([]float64, error) {
+	base := fmt.Sprintf("projects/%s/locations/%s/publishers/google/models", g.project, g.location)
+	url := fmt.Sprintf("%s/%s", base, g.model)
 
 	var err error
 	var promptValue *structpb.Value
@@ -86,7 +86,7 @@ func (t *textEmbedding) TextEmbedding(ctx context.Context, text string, task emb
 		Instances: []*structpb.Value{promptValue},
 	}
 
-	resp, err := t.client.Predict(ctx, req)
+	resp, err := g.client.Predict(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +137,8 @@ func (t *textEmbedding) TextEmbedding(ctx context.Context, text string, task emb
 		}
 	}
 
-	if t.outputDim > 0 && len(embeddings) > t.outputDim {
-		embeddings = embeddings[:t.outputDim]
+	if g.outputDim > 0 && len(embeddings) > g.outputDim {
+		embeddings = embeddings[:g.outputDim]
 	}
 
 	return embeddings, nil
