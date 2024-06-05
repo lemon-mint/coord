@@ -476,7 +476,7 @@ var (
 	ErrAPIKeyRequired error = errors.New("api key is required")
 )
 
-func (AIStudioProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+func (AIStudioProvider) newAIStudioClient(ctx context.Context, configs ...pconf.Config) (*aiStudioClient, error) {
 	client_config := pconf.GeneralConfig{}
 	for i := range configs {
 		configs[i].Apply(&client_config)
@@ -498,6 +498,10 @@ func (AIStudioProvider) NewLLMClient(ctx context.Context, configs ...pconf.Confi
 	return &aiStudioClient{
 		client: genaiClient,
 	}, nil
+}
+
+func (AIStudioProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
+	return (AIStudioProvider).newAIStudioClient(AIStudioProvider{}, ctx, configs...)
 }
 
 const ProviderName = "aistudio"
