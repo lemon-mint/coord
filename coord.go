@@ -18,8 +18,8 @@ var (
 	embeddingProviders   = make(map[string]provider.EmbeddingProvider)
 )
 
-// LLMProviders returns the names of the registered llm providers.
-func LLMProviders() []string {
+// ListLLMProviders returns the names of the registered llm providers.
+func ListLLMProviders() []string {
 	llmProvidersMu.RLock()
 	defer llmProvidersMu.RUnlock()
 	list := make([]string, 0, len(llmProviders))
@@ -44,8 +44,8 @@ func RemoveLLMProvider(name string) {
 	delete(llmProviders, name)
 }
 
-// TTSProviders returns the names of the registered tts providers.
-func TTSProviders() []string {
+// ListTTSProviders returns the names of the registered tts providers.
+func ListTTSProviders() []string {
 	ttsProvidersMu.RLock()
 	defer ttsProvidersMu.RUnlock()
 	list := make([]string, 0, len(ttsProviders))
@@ -70,8 +70,8 @@ func RemoveTTSProvider(name string) {
 	delete(ttsProviders, name)
 }
 
-// EmbeddingProviders returns the names of the registered embedding providers.
-func EmbeddingProviders() []string {
+// ListEmbeddingProviders returns the names of the registered embedding providers.
+func ListEmbeddingProviders() []string {
 	embeddingProvidersMu.RLock()
 	defer embeddingProvidersMu.RUnlock()
 	list := make([]string, 0, len(embeddingProviders))

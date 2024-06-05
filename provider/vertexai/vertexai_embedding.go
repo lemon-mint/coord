@@ -194,7 +194,7 @@ func (VertexAIProvider) NewEmbeddingClient(ctx context.Context, configs ...pconf
 
 func init() {
 	var exists bool
-	for _, n := range coord.EmbeddingProviders() {
+	for _, n := range coord.ListEmbeddingProviders() {
 		if n == ProviderName {
 			exists = true
 			break

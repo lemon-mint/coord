@@ -199,7 +199,7 @@ var Provider OllamaProvider
 
 func init() {
 	var exists bool
-	for _, n := range coord.LLMProviders() {
+	for _, n := range coord.ListLLMProviders() {
 		if n == ProviderName {
 			exists = true
 			break
