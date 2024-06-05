@@ -212,6 +212,4 @@ func TestVertexAIToolCall(t *testing.T) {
 		t.Error("expected output to contain \"25\", got ", output_texts)
 		return
 	}
-
-	panic("")
 }
