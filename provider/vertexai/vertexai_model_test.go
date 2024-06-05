@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/lemon-mint/coord/llm"
-	"github.com/lemon-mint/coord/llmutils/softcall"
+	"github.com/lemon-mint/coord/llmtools/softcall"
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
 	"github.com/lemon-mint/coord/provider/vertexai"

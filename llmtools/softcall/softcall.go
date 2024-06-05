@@ -236,7 +236,9 @@ func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 	})
 
 	for i := range chat.Contents {
-		messages = append(messages, convertToYAMLContent(chat.Contents[i]))
+		content := convertToYAMLContent(chat.Contents[i])
+		content.Parts = llmutils.MergeTexts(content.Parts)
+		messages = append(messages, content)
 	}
 
 	chat = &llm.ChatContext{
@@ -367,7 +369,7 @@ func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 							}
 
 							payload := &llm.FunctionCall{
-								Name: call.Name,
+								Name: strings.TrimSpace(call.Name),
 								ID:   callid.OpenAICallID(),
 								Args: call.Parameters,
 							}
@@ -391,6 +393,16 @@ func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 						return
 					}
 				}
+			}
+		}
+
+		if head.Len() > 0 {
+			payload := llm.Text(head.String())
+			v.Content.Parts = append(v.Content.Parts, payload)
+			select {
+			case stream <- payload:
+			case <-ctx.Done():
+				return
 			}
 		}
 
