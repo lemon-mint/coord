@@ -266,6 +266,21 @@ func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 					}
 				}
 			}
+
+			var newParts []llm.Segment
+			for i := range v.Content.Parts {
+				if v.Content.Parts[i].Type() == llm.SegmentTypeText {
+					str := string(v.Content.Parts[i].(llm.Text))
+					if strings.TrimSpace(str) == "" {
+						continue
+					}
+					newParts = append(newParts, v.Content.Parts[i])
+				} else {
+					newParts = append(newParts, v.Content.Parts[i])
+				}
+			}
+
+			v.Content.Parts = newParts
 		}()
 
 		var head strings.Builder
