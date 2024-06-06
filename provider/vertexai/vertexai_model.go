@@ -436,7 +436,7 @@ func ptrify[T any](v T) *T {
 	return &v
 }
 
-var defaultVertexAIConfig = &llm.Config{
+var defaultVertexAILLMConfig = &llm.Config{
 	Temperature:           ptrify(float32(0.4)),
 	MaxOutputTokens:       ptrify(2048),
 	SafetyFilterThreshold: llm.BlockOnlyHigh,
@@ -478,7 +478,7 @@ func (g *vertexAIClient) Close() error {
 
 func (g *vertexAIClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
-		config = defaultVertexAIConfig
+		config = defaultVertexAILLMConfig
 	}
 
 	var _vm = &vertexAIModel{
