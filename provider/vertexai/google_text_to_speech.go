@@ -79,6 +79,7 @@ var defaultTextToSpeechConfig = &tts.Config{
 	Model:        "en-US-Journey-F",
 	SpeakingRate: 1.0,
 	Pitch:        0,
+	Format:       tts.FormatMP3,
 }
 
 type textToSpeechClient struct {
@@ -100,6 +101,10 @@ func (g *textToSpeechClient) NewTTS(model string, config *tts.Config) (tts.TTS, 
 		pitch:         config.Pitch,
 		sample_rate:   int32(config.SampleRate),
 		fmt:           config.Format,
+	}
+
+	if _em.fmt == "" {
+		_em.fmt = tts.FormatMP3
 	}
 
 	return _em, nil

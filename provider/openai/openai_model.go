@@ -353,7 +353,7 @@ func ptrify[T any](v T) *T {
 	return &v
 }
 
-var defaultOpenAIConfig = &llm.Config{
+var defaultOpenAILLMConfig = &llm.Config{
 	MaxOutputTokens:       ptrify(2048),
 	SafetyFilterThreshold: llm.BlockLowAndAbove,
 }
@@ -384,7 +384,7 @@ func (*openAIClient) Close() error {
 
 func (g *openAIClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
 	if config == nil {
-		config = defaultOpenAIConfig
+		config = defaultOpenAILLMConfig
 	}
 
 	var _vm = &openAIModel{
