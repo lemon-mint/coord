@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-type EmbeddingModel interface {
+type Model interface {
 	TextEmbedding(ctx context.Context, text string, task TaskType) ([]float64, error) // Returns the embedding of the text.
 }
 

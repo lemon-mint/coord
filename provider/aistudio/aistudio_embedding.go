@@ -10,7 +10,7 @@ import (
 	"github.com/lemon-mint/coord/provider"
 )
 
-var _ embedding.EmbeddingModel = (*textEmbedding)(nil)
+var _ embedding.Model = (*textEmbedding)(nil)
 
 type textEmbedding struct {
 	client *genai.Client
@@ -65,7 +65,7 @@ func (g *textEmbedding) TextEmbedding(ctx context.Context, text string, task emb
 
 var _ provider.EmbeddingClient = (*aiStudioClient)(nil)
 
-func (g *aiStudioClient) NewEmbedding(model string, config *embedding.Config) (embedding.EmbeddingModel, error) {
+func (g *aiStudioClient) NewEmbedding(model string, config *embedding.Config) (embedding.Model, error) {
 	if config == nil {
 		config = &embedding.Config{}
 	}

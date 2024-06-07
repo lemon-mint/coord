@@ -17,7 +17,7 @@ import (
 	"github.com/sashabaranov/go-openai/jsonschema"
 )
 
-var _ llm.LLM = (*openAIModel)(nil)
+var _ llm.Model = (*openAIModel)(nil)
 
 func convertContextOpenAI(chat *llm.ChatContext) []openai.ChatCompletionMessage {
 	contents := make([]openai.ChatCompletionMessage, 0, len(chat.Contents)+1)
@@ -382,7 +382,7 @@ func (*openAIClient) Close() error {
 	return nil
 }
 
-func (g *openAIClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
+func (g *openAIClient) NewLLM(model string, config *llm.Config) (llm.Model, error) {
 	if config == nil {
 		config = defaultOpenAILLMConfig
 	}

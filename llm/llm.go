@@ -123,7 +123,7 @@ func (g *StreamContent) Wait() error {
 	return g.Err
 }
 
-type LLM interface {
+type Model interface {
 	GenerateStream(ctx context.Context, chat *ChatContext, input *Content) *StreamContent
 	Close() error
 	Name() string

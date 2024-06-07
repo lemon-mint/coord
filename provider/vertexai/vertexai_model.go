@@ -17,7 +17,7 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-var _ llm.LLM = (*vertexAIModel)(nil)
+var _ llm.Model = (*vertexAIModel)(nil)
 
 func convTypeVertexAI(t llm.OpenAPIType) genai.Type {
 	switch t {
@@ -476,7 +476,7 @@ func (g *vertexAIClient) Close() error {
 	return nil
 }
 
-func (g *vertexAIClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
+func (g *vertexAIClient) NewLLM(model string, config *llm.Config) (llm.Model, error) {
 	if config == nil {
 		config = defaultVertexAILLMConfig
 	}

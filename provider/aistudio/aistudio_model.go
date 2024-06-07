@@ -17,7 +17,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-var _ llm.LLM = (*generativeLanguageModel)(nil)
+var _ llm.Model = (*generativeLanguageModel)(nil)
 
 func convTypeGenerativeLanguage(t llm.OpenAPIType) genai.Type {
 	switch t {
@@ -453,7 +453,7 @@ func (g *aiStudioClient) Close() error {
 	return g.client.Close()
 }
 
-func (g *aiStudioClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
+func (g *aiStudioClient) NewLLM(model string, config *llm.Config) (llm.Model, error) {
 	if config == nil {
 		config = defaultGenerativeLanguageConfig
 	}

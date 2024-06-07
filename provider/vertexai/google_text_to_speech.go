@@ -25,7 +25,7 @@ type textToSpeechModel struct {
 	sample_rate int32
 }
 
-var _ tts.TTS = (*textToSpeechModel)(nil)
+var _ tts.Model = (*textToSpeechModel)(nil)
 
 func (g *textToSpeechModel) GenerateSpeech(ctx context.Context, text string) (*tts.AudioFile, error) {
 	var encoding texttospeechpb.AudioEncoding
@@ -88,7 +88,7 @@ type textToSpeechClient struct {
 
 var _ provider.TTSClient = (*textToSpeechClient)(nil)
 
-func (g *textToSpeechClient) NewTTS(model string, config *tts.Config) (tts.TTS, error) {
+func (g *textToSpeechClient) NewTTS(model string, config *tts.Config) (tts.Model, error) {
 	if config == nil {
 		config = defaultTextToSpeechConfig
 	}

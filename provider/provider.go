@@ -10,7 +10,7 @@ import (
 )
 
 type LLMClient interface {
-	NewLLM(model string, config *llm.Config) (llm.LLM, error)
+	NewLLM(model string, config *llm.Config) (llm.Model, error)
 	Close() error
 }
 
@@ -19,7 +19,7 @@ type LLMProvider interface {
 }
 
 type EmbeddingClient interface {
-	NewEmbedding(model string, config *embedding.Config) (embedding.EmbeddingModel, error)
+	NewEmbedding(model string, config *embedding.Config) (embedding.Model, error)
 	Close() error
 }
 
@@ -28,7 +28,7 @@ type EmbeddingProvider interface {
 }
 
 type TTSClient interface {
-	NewTTS(model string, config *tts.Config) (tts.TTS, error)
+	NewTTS(model string, config *tts.Config) (tts.Model, error)
 	Close() error
 }
 

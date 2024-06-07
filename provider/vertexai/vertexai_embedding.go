@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-var _ embedding.EmbeddingModel = (*textEmbedding)(nil)
+var _ embedding.Model = (*textEmbedding)(nil)
 
 type textEmbedding struct {
 	client   *aiplatform.PredictionClient
@@ -146,7 +146,7 @@ func (g *textEmbedding) TextEmbedding(ctx context.Context, text string, task emb
 
 var _ provider.EmbeddingClient = (*vertexAIClient)(nil)
 
-func (g *vertexAIClient) NewEmbedding(model string, config *embedding.Config) (embedding.EmbeddingModel, error) {
+func (g *vertexAIClient) NewEmbedding(model string, config *embedding.Config) (embedding.Model, error) {
 	if config == nil {
 		config = &embedding.Config{}
 	}

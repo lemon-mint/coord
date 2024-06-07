@@ -36,6 +36,6 @@ type Config struct {
 	Format Format
 }
 
-type TTS interface {
+type Model interface {
 	GenerateSpeech(ctx context.Context, text string) (*AudioFile, error)
 }

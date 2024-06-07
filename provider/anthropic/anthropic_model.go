@@ -19,7 +19,7 @@ import (
 	"github.com/valyala/fastjson"
 )
 
-var _ llm.LLM = (*anthropicModel)(nil)
+var _ llm.Model = (*anthropicModel)(nil)
 
 type anthropicModel struct {
 	client *anthropicAPIClient
@@ -549,7 +549,7 @@ func (*anthropicClient) Close() error {
 	return nil
 }
 
-func (g *anthropicClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
+func (g *anthropicClient) NewLLM(model string, config *llm.Config) (llm.Model, error) {
 	if config == nil {
 		config = defaultAnthropicConfig
 	}

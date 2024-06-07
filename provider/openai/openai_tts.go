@@ -21,7 +21,7 @@ type openAITTS struct {
 	fmt tts.Format
 }
 
-var _ tts.TTS = (*openAITTS)(nil)
+var _ tts.Model = (*openAITTS)(nil)
 
 func (g *openAITTS) GenerateSpeech(ctx context.Context, text string) (*tts.AudioFile, error) {
 	var encoding openai.SpeechResponseFormat
@@ -73,7 +73,7 @@ var defaultOpenAITTSConfig = &tts.Config{
 
 var _ provider.TTSClient = (*openAIClient)(nil)
 
-func (g *openAIClient) NewTTS(model string, config *tts.Config) (tts.TTS, error) {
+func (g *openAIClient) NewTTS(model string, config *tts.Config) (tts.Model, error) {
 	if config == nil {
 		config = defaultOpenAITTSConfig
 	}

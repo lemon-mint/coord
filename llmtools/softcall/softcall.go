@@ -18,7 +18,7 @@ type SoftCallConfig struct {
 }
 
 type YAMLSoftCallLLM struct {
-	upstream llm.LLM
+	upstream llm.Model
 	config   SoftCallConfig
 }
 
@@ -26,7 +26,7 @@ var defaultConfig = &SoftCallConfig{
 	PreserveReasoning: false,
 }
 
-func NewYAMLSoftCallLLM(upstream llm.LLM, config *SoftCallConfig) *YAMLSoftCallLLM {
+func NewYAMLSoftCallLLM(upstream llm.Model, config *SoftCallConfig) *YAMLSoftCallLLM {
 	if config == nil {
 		config = defaultConfig
 	}
@@ -34,7 +34,7 @@ func NewYAMLSoftCallLLM(upstream llm.LLM, config *SoftCallConfig) *YAMLSoftCallL
 	return &YAMLSoftCallLLM{upstream: upstream, config: *config}
 }
 
-var _ llm.LLM = (*YAMLSoftCallLLM)(nil)
+var _ llm.Model = (*YAMLSoftCallLLM)(nil)
 
 const yamlPrompt = `Here are the tools available for you to use in answering the question:
 

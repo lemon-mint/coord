@@ -138,7 +138,7 @@ var defaultOllamaConfig = &llm.Config{
 	MaxOutputTokens: ptrify(2048),
 }
 
-var _ llm.LLM = (*ollamaModel)(nil)
+var _ llm.Model = (*ollamaModel)(nil)
 
 type ollamaModel struct {
 	client *ollama.Client
@@ -156,7 +156,7 @@ func (*ollamaClient) Close() error {
 	return nil
 }
 
-func (g *ollamaClient) NewLLM(model string, config *llm.Config) (llm.LLM, error) {
+func (g *ollamaClient) NewLLM(model string, config *llm.Config) (llm.Model, error) {
 	if config == nil {
 		config = defaultOllamaConfig
 	}
