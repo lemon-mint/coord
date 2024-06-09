@@ -3,6 +3,7 @@ package vertexai
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
@@ -10,6 +11,7 @@ import (
 	"github.com/lemon-mint/coord/embedding"
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
+	"google.golang.org/api/option"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -25,8 +27,7 @@ type textEmbedding struct {
 }
 
 func (g *textEmbedding) TextEmbedding(ctx context.Context, text string, task embedding.TaskType) ([]float64, error) {
-	base := fmt.Sprintf("projects/%s/locations/%s/publishers/google/models", g.project, g.location)
-	url := fmt.Sprintf("%s/%s", base, g.model)
+	url := fmt.Sprintf("projects/%s/locations/%s/publishers/google/models/%s", g.project, g.location, g.model)
 
 	var err error
 	var promptValue *structpb.Value
@@ -179,6 +180,8 @@ func (VertexAIProvider) NewEmbeddingClient(ctx context.Context, configs ...pconf
 	if location == "" {
 		return nil, ErrLocationRequired
 	}
+
+	client_options = append(client_options, option.WithEndpoint(strings.TrimSpace(location)+"-aiplatform.googleapis.com:443"))
 
 	predictionClient, err := aiplatform.NewPredictionClient(ctx, client_options...)
 	if err != nil {

@@ -23,6 +23,7 @@ go.work
 # Secrets
 .env
 secrets
-examples
 openapi.yaml
 openapi.html
+
+testmain
