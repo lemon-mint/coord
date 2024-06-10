@@ -370,7 +370,7 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 		}
 
 		v.Content = convertAnthropicContent(response)
-		v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
+		v.Content.Parts = llmutils.Normalize(v.Content.Parts)
 		v.FinishReason = convertAnthropicFinishReason(response.StopReason)
 		if response.Usage != nil {
 			v.UsageData = &llm.UsageData{

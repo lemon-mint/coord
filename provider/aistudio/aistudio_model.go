@@ -342,7 +342,7 @@ func (g *generativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
+			v.Content.Parts = llmutils.Normalize(v.Content.Parts)
 			if v.FinishReason == llm.FinishReasonStop {
 				for i := range v.Content.Parts {
 					if v.Content.Parts[i].Type() == llm.SegmentTypeFunctionCall {

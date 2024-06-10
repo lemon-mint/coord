@@ -69,7 +69,7 @@ func (g *ollamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
+			v.Content.Parts = llmutils.Normalize(v.Content.Parts)
 		}()
 
 		err := g.client.Heartbeat(ctx)

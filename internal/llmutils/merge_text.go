@@ -2,7 +2,7 @@ package llmutils
 
 import "github.com/lemon-mint/coord/llm"
 
-func MergeTexts(p []llm.Segment) []llm.Segment {
+func Normalize(p []llm.Segment) []llm.Segment {
 	if len(p) < 2 {
 		return p
 	}
@@ -14,6 +14,11 @@ func MergeTexts(p []llm.Segment) []llm.Segment {
 			new[len(new)-1].Type() == llm.SegmentTypeText {
 			new[len(new)-1] = new[len(new)-1].(llm.Text) + p[i].(llm.Text)
 		} else {
+			if p[i].Type() == llm.SegmentTypeText {
+				if p[i].(llm.Text) == "" {
+					continue
+				}
+			}
 			new = append(new, p[i])
 		}
 	}

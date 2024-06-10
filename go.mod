@@ -7,8 +7,8 @@ require (
 	cloud.google.com/go/texttospeech v1.7.7
 	cloud.google.com/go/vertexai v0.10.0
 	github.com/goccy/go-yaml v1.11.3
-	github.com/google/generative-ai-go v0.13.0
-	github.com/ollama/ollama v0.1.41
+	github.com/google/generative-ai-go v0.14.0
+	github.com/ollama/ollama v0.1.42
 	github.com/sashabaranov/go-openai v1.24.1
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.24.0
@@ -50,8 +50,8 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto v0.0.0-20240604185151-ef581f913117 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
+	google.golang.org/genproto v0.0.0-20240610135401-a8a62080eff3 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240610135401-a8a62080eff3 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240610135401-a8a62080eff3 // indirect
 	google.golang.org/grpc v1.64.0 // indirect
 )

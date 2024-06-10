@@ -237,7 +237,7 @@ func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 
 	for i := range chat.Contents {
 		content := convertToYAMLContent(chat.Contents[i])
-		content.Parts = llmutils.MergeTexts(content.Parts)
+		content.Parts = llmutils.Normalize(content.Parts)
 		messages = append(messages, content)
 	}
 
@@ -257,7 +257,7 @@ func (g *YAMLSoftCallLLM) GenerateStream(ctx context.Context, chat *llm.ChatCont
 	go func() {
 		defer close(stream)
 		defer func() {
-			v.Content.Parts = llmutils.MergeTexts(v.Content.Parts)
+			v.Content.Parts = llmutils.Normalize(v.Content.Parts)
 			if v.FinishReason == llm.FinishReasonStop {
 				for i := range v.Content.Parts {
 					if v.Content.Parts[i].Type() == llm.SegmentTypeFunctionCall {
