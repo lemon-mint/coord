@@ -3,18 +3,18 @@ module github.com/lemon-mint/coord
 go 1.22.2
 
 require (
-	cloud.google.com/go/aiplatform v1.67.0
+	cloud.google.com/go/aiplatform v1.68.0
 	cloud.google.com/go/texttospeech v1.7.7
-	cloud.google.com/go/vertexai v0.10.0
+	cloud.google.com/go/vertexai v0.11.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/generative-ai-go v0.14.0
-	github.com/ollama/ollama v0.1.42
+	github.com/ollama/ollama v0.1.43
 	github.com/sashabaranov/go-openai v1.24.1
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.24.0
 	golang.org/x/sys v0.21.0
 	google.golang.org/api v0.183.0
-	google.golang.org/protobuf v1.34.1
+	google.golang.org/protobuf v1.34.2
 	gopkg.eu.org/envloader v1.1.0
 )
 
