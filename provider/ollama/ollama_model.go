@@ -13,8 +13,14 @@ import (
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
 
+	_ "unsafe"
+
 	ollama "github.com/ollama/ollama/api"
+	env "github.com/ollama/ollama/envconfig"
 )
+
+//go:linkname getOllamaHost github.com/ollama/ollama/envconfig.getOllamaHost
+func getOllamaHost() (*env.OllamaHost, error)
 
 func convertContextOllama(chat *llm.ChatContext, system string) []ollama.Message {
 	messages := make([]ollama.Message, 0, len(chat.Contents)+1)
