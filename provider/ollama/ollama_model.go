@@ -13,8 +13,14 @@ import (
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
 
+	_ "unsafe"
+
 	ollama "github.com/ollama/ollama/api"
+	env "github.com/ollama/ollama/envconfig"
 )
+
+//go:linkname getOllamaHost github.com/ollama/ollama/envconfig.getOllamaHost
+func getOllamaHost() (*env.OllamaHost, error)
 
 func convertContextOllama(chat *llm.ChatContext, system string) []ollama.Message {
 	messages := make([]ollama.Message, 0, len(chat.Contents)+1)
@@ -161,7 +167,7 @@ func (g *ollamaClient) NewLLM(model string, config *llm.Config) (llm.Model, erro
 		config = defaultOllamaConfig
 	}
 
-	var _vm = &ollamaModel{
+	_vm := &ollamaModel{
 		client: g.client,
 		model:  model,
 		config: config,
@@ -172,8 +178,7 @@ func (g *ollamaClient) NewLLM(model string, config *llm.Config) (llm.Model, erro
 
 var _ provider.LLMProvider = Provider
 
-type OllamaProvider struct {
-}
+type OllamaProvider struct{}
 
 func (OllamaProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
@@ -181,12 +186,12 @@ func (OllamaProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config)
 		configs[i].Apply(&client_config)
 	}
 
-	host, err := ollama.GetOllamaHost()
+	host, err := getOllamaHost()
 	if err != nil {
 		return nil, err
 	}
 
-	//TODO: Apply client_config, baseurl
+	// TODO: Apply client_config, baseurl
 
 	return &ollamaClient{
 		client: ollama.NewClient(&url.URL{Scheme: host.Scheme, Host: net.JoinHostPort(host.Host, host.Port)}, http.DefaultClient),
