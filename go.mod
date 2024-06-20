@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/vertexai v0.11.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/generative-ai-go v0.14.0
-	github.com/ollama/ollama v0.1.43
+	github.com/ollama/ollama v0.1.44
 	github.com/sashabaranov/go-openai v1.24.1
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.24.0
