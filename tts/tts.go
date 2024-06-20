@@ -2,7 +2,6 @@ package tts
 
 import (
 	"context"
-	"errors"
 )
 
 type Format string
@@ -23,8 +22,6 @@ type AudioFile struct {
 	Data   []byte `json:"data"`
 }
 
-var ErrUnsupportedFileFormat = errors.New("unsupported file format")
-
 type Config struct {
 	Language string
 	Model    string
@@ -34,6 +31,18 @@ type Config struct {
 	SampleRate   int
 
 	Format Format
+
+	VoiceID         string
+	Stability       float64
+	SimilarityBoost float64
+	Style           int
+	UseSpeakerBoost bool
+	Seed            int
+
+	PronunciationDictLocs []struct {
+		PronunciationDictionaryID string
+		VersionID                 string
+	}
 }
 
 type Model interface {
