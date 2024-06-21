@@ -14,7 +14,7 @@ import (
 
 func main() {
 	type Config struct {
-		APIKey string `env:"ELEVENLABS_KEY,required"`
+		APIKey string `env:"ELEVENLABS_API_KEY,required"`
 	}
 	c := &Config{}
 
