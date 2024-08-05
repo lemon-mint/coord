@@ -313,8 +313,8 @@ func (g *vertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContex
 
 	model.StopSequences = g.config.StopSequences
 
-	if g.config.SystemInstruction != "" {
-		model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(g.config.SystemInstruction)}}
+	if g.config.SystemInstruction != "" || chat.SystemInstruction != "" {
+		model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(g.config.SystemInstruction + chat.SystemInstruction)}}
 	}
 
 	session := model.StartChat()

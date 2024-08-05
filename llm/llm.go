@@ -89,6 +89,8 @@ type FunctionDeclaration struct {
 type ChatContext struct {
 	Contents []*Content             `json:"contents"`
 	Tools    []*FunctionDeclaration `json:"tools"`
+
+	SystemInstruction string `json:"system_instruction"`
 }
 
 type FinishReason string

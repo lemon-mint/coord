@@ -66,7 +66,7 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 		model_request := &anthropicCreateMessagesRequest{
 			Model:         g.model,
 			Messages:      msgs,
-			SystemPrompt:  g.config.SystemInstruction,
+			SystemPrompt:  g.config.SystemInstruction + chat.SystemInstruction,
 			StopSequences: g.config.StopSequences,
 			Tools:         convertToolsAnthropic(chat.Tools),
 			Temperature:   g.config.Temperature,

@@ -241,6 +241,13 @@ func (g *openAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 		}}, contents...)
 	}
 
+	if chat.SystemInstruction != "" {
+		contents = append([]openai.ChatCompletionMessage{{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: chat.SystemInstruction,
+		}}, contents...)
+	}
+
 	model_request := openai.ChatCompletionRequest{
 		Model:    g.model,
 		Messages: contents,

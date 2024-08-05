@@ -95,7 +95,7 @@ func (g *ollamaModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 			Messages: convertContextOllama(&llm.ChatContext{
 				Contents: messages,
 				Tools:    chat.Tools,
-			}, g.config.SystemInstruction),
+			}, g.config.SystemInstruction+chat.SystemInstruction),
 			Stream: ptrify(true),
 		}
 
