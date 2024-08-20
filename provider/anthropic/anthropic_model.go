@@ -589,6 +589,10 @@ func (AnthropicProvider) NewLLMClient(ctx context.Context, configs ...pconf.Conf
 		return nil, err
 	}
 
+	if client_config.BaseURL != "" {
+		_anthropicClient.baseURL = client_config.BaseURL
+	}
+
 	return &anthropicClient{
 		client: _anthropicClient,
 	}, nil
