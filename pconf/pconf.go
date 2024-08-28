@@ -15,7 +15,7 @@ type GeneralConfig struct {
 }
 
 func (GeneralConfig) String() string {
-	return "<GeneralConfig>"
+	return "<GeneralConfig [REDACTED]>"
 }
 
 type Config interface {
