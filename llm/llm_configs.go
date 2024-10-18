@@ -19,4 +19,5 @@ const (
 	BlockLowAndAbove
 	BlockMediumAndAbove
 	BlockOnlyHigh
+	BlockOff
 )

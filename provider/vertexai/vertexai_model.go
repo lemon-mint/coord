@@ -293,6 +293,25 @@ func (g *vertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContex
 				Threshold: genai.HarmBlockOnlyHigh,
 			},
 		}
+	case llm.BlockOff:
+		model.SafetySettings = []*genai.SafetySetting{
+			{
+				Category:  genai.HarmCategoryHateSpeech,
+				Threshold: genai.HarmBlockUnspecified,
+			},
+			{
+				Category:  genai.HarmCategoryDangerousContent,
+				Threshold: genai.HarmBlockUnspecified,
+			},
+			{
+				Category:  genai.HarmCategoryHarassment,
+				Threshold: genai.HarmBlockUnspecified,
+			},
+			{
+				Category:  genai.HarmCategorySexuallyExplicit,
+				Threshold: genai.HarmBlockUnspecified,
+			},
+		}
 	}
 
 	if g.config.Temperature != nil {
