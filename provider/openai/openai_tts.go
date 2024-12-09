@@ -95,32 +95,7 @@ func (g *openAIClient) NewTTS(model string, config *tts.Config) (tts.Model, erro
 var _ provider.TTSProvider = Provider
 
 func (OpenAIProvider) NewTTSClient(ctx context.Context, configs ...pconf.Config) (provider.TTSClient, error) {
-	client_config := pconf.GeneralConfig{}
-	var openai_config *openai.ClientConfig
-	for i := range configs {
-		switch v := configs[i].(type) {
-		case *openaiConfig:
-			openai_config = &v.c
-		default:
-			configs[i].Apply(&client_config)
-		}
-	}
-
-	if openai_config == nil {
-		if client_config.APIKey == "" {
-			return nil, ErrAPIKeyRequired
-		}
-		v := openai.DefaultConfig(client_config.APIKey)
-		openai_config = &v
-	}
-
-	if client_config.BaseURL != "" {
-		openai_config.BaseURL = client_config.BaseURL
-	}
-
-	return &openAIClient{
-		client: openai.NewClientWithConfig(*openai_config),
-	}, nil
+	return newClient(configs...)
 }
 
 func init() {
