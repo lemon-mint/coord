@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"io"
 
 	"github.com/lemon-mint/coord"
@@ -381,14 +380,6 @@ func (g *openAIModel) Close() error {
 
 var _ provider.LLMClient = (*openAIClient)(nil)
 
-type openAIClient struct {
-	client *openai.Client
-}
-
-func (*openAIClient) Close() error {
-	return nil
-}
-
 func (g *openAIClient) NewLLM(model string, config *llm.Config) (llm.Model, error) {
 	if config == nil {
 		config = defaultOpenAILLMConfig
@@ -408,57 +399,8 @@ var _ provider.LLMProvider = Provider
 type OpenAIProvider struct {
 }
 
-var (
-	ErrAPIKeyRequired error = errors.New("api key is required")
-)
-
-type openaiConfig struct {
-	c openai.ClientConfig
-}
-
-func (*openaiConfig) Apply(g *pconf.GeneralConfig) error {
-	return nil
-}
-
-func WithAzureConfig(apiKey, baseURL string) pconf.Config {
-	return &openaiConfig{
-		c: openai.DefaultAzureConfig(apiKey, baseURL),
-	}
-}
-
-func WithOpenAIConfig(config openai.ClientConfig) pconf.Config {
-	return &openaiConfig{
-		c: config,
-	}
-}
-
 func (OpenAIProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
-	client_config := pconf.GeneralConfig{}
-	var openai_config *openai.ClientConfig
-	for i := range configs {
-		switch v := configs[i].(type) {
-		case *openaiConfig:
-			openai_config = &v.c
-		default:
-			configs[i].Apply(&client_config)
-		}
-	}
-
-	if openai_config == nil {
-		if client_config.APIKey == "" {
-			return nil, ErrAPIKeyRequired
-		}
-		v := openai.DefaultConfig(client_config.APIKey)
-		openai_config = &v
-	}
-
-	if client_config.BaseURL != "" {
-		openai_config.BaseURL = client_config.BaseURL
-	}
-
-	return &openAIClient{
-		client: openai.NewClientWithConfig(*openai_config),
-	}, nil
+	return newClient(configs...)
 }
 
 const ProviderName = "openai"

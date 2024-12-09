@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-
 	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/internal/callid"
 	"github.com/lemon-mint/coord/internal/llmutils"
@@ -519,18 +518,39 @@ var (
 	ErrProjectIDRequired error = errors.New("project ID is required")
 )
 
+type vertexaiConfig func(*vertexAIClient) error
+
+func (vertexaiConfig) Apply(*pconf.GeneralConfig) error {
+	return nil
+}
+
+func WithVertexAIClient(client *genai.Client) pconf.Config {
+	return vertexaiConfig(func(c *vertexAIClient) error {
+		c.genaiClient = client
+		return nil
+	})
+}
+
 func (VertexAIProvider) NewLLMClient(ctx context.Context, configs ...pconf.Config) (provider.LLMClient, error) {
 	client_config := pconf.GeneralConfig{}
+	var vertexai_client vertexAIClient
 	for i := range configs {
-		configs[i].Apply(&client_config)
+		switch v := configs[i].(type) {
+		case vertexaiConfig:
+			if err := v(&vertexai_client); err != nil {
+				return nil, err
+			}
+		default:
+			configs[i].Apply(&client_config)
+		}
+	}
+
+	if vertexai_client.genaiClient != nil {
+		return &vertexai_client, nil
 	}
 
 	projectID := client_config.ProjectID
 	location := client_config.Location
-	client_options := client_config.GoogleClientOptions
-	if client_config.UseREST {
-		client_options = append(client_options, genai.WithREST())
-	}
 
 	if projectID == "" {
 		return nil, ErrProjectIDRequired
@@ -540,16 +560,18 @@ func (VertexAIProvider) NewLLMClient(ctx context.Context, configs ...pconf.Confi
 		return nil, ErrLocationRequired
 	}
 
-	genaiClient, err := genai.NewClient(ctx, projectID, location, client_options...)
-	if err != nil {
-		return nil, err
+	client_options := client_config.GoogleClientOptions
+	if client_config.UseREST {
+		client_options = append(client_options, genai.WithREST())
 	}
 
-	return &vertexAIClient{
-		genaiClient: genaiClient,
-		location:    location,
-		projectID:   projectID,
-	}, nil
+	if genaiClient, err := genai.NewClient(ctx, projectID, location, client_options...); err != nil {
+		return nil, err
+	} else {
+		vertexai_client.genaiClient = genaiClient
+	}
+
+	return &vertexai_client, nil
 }
 
 const ProviderName = "vertexai"
