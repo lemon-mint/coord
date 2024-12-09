@@ -34,7 +34,7 @@ func main() {
 	}
 	defer client.Close()
 
-	model, err := client.NewLLM("gemini-1.5-flash-001", nil)
+	model, err := client.NewLLM("gemini-1.5-flash-002", nil)
 	if err != nil {
 		panic(err)
 	}
