@@ -20,7 +20,7 @@ var (
 
 type openaiConfig func(*openAIClient) error
 
-func (openaiConfig) Apply(g *pconf.GeneralConfig) error {
+func (openaiConfig) Apply(*pconf.GeneralConfig) error {
 	return nil
 }
 
