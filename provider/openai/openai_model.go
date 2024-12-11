@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 
 	"github.com/lemon-mint/coord"
@@ -18,104 +19,201 @@ import (
 
 var _ llm.Model = (*openAIModel)(nil)
 
-func convertContextOpenAI(chat *llm.ChatContext) []openai.ChatCompletionMessage {
-	contents := make([]openai.ChatCompletionMessage, 0, len(chat.Contents)+1)
+var (
+	errEmptyContent   error = errors.New("convertContentCoord2OpenAI: empty content")
+	errInvalidContent error = errors.New("convertContentCoord2OpenAI: invalid content")
+)
 
-L0:
-	for i := range chat.Contents {
-		var role string
-		switch chat.Contents[i].Role {
-		case llm.RoleUser:
-			role = openai.ChatMessageRoleUser
-		case llm.RoleModel:
-			role = openai.ChatMessageRoleAssistant
-		case llm.RoleFunc:
-			role = openai.ChatMessageRoleTool
-		default:
-			role = openai.ChatMessageRoleUser
-		}
+func convertContentCoord2OpenAI(dst []openai.ChatCompletionMessage, content *llm.Content) ([]openai.ChatCompletionMessage, error) {
+	if content == nil {
+		return dst, errEmptyContent
+	}
 
-		if len(chat.Contents[i].Parts) == 0 {
-			continue
-		}
+	coordContent := content
 
-		if len(chat.Contents[i].Parts) == 1 {
-			switch p := chat.Contents[i].Parts[0].(type) {
-			case llm.Text:
-				contents = append(contents, openai.ChatCompletionMessage{
-					Role:    role,
-					Content: string(p),
-				})
-				continue L0
-			}
-		}
+	var role string
+	switch content.Role {
+	case llm.RoleUser:
+		role = openai.ChatMessageRoleUser
+	case llm.RoleModel:
+		role = openai.ChatMessageRoleAssistant
+	case llm.RoleFunc:
+		role = openai.ChatMessageRoleTool
+	default:
+		return dst, errInvalidContent
+	}
 
-	L1:
-		for _, seg := range chat.Contents[i].Parts {
-			var msg openai.ChatCompletionMessage
-			msg.Role = role
+	if len(coordContent.Parts) == 0 {
+		return dst, errEmptyContent
+	}
 
-			switch p := seg.(type) {
-			case llm.Text:
-				msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
-					Type: openai.ChatMessagePartTypeText,
-					Text: string(p),
-				})
-			case *llm.InlineData:
-				msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
-					Type: openai.ChatMessagePartTypeImageURL,
-					Text: "data:" + p.MIMEType + ";base64," + base64.URLEncoding.EncodeToString(p.Data),
-				})
-			case *llm.FileData:
-				msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
-					Type: openai.ChatMessagePartTypeImageURL,
-					Text: p.FileURI,
-				})
-			case *llm.FunctionCall:
-				jdata, err := json.Marshal(p.Args)
-				if err != nil {
-					jdata = []byte("{\"error\": \"RPCError: Failed to marshal the args (HTTP 500)\"}")
-				}
-
-				msg.ToolCalls = append(msg.ToolCalls, openai.ToolCall{
-					Type: openai.ToolTypeFunction,
-					ID:   p.ID,
-					Function: openai.FunctionCall{
-						Name:      p.Name,
-						Arguments: string(jdata),
-					},
-				})
-			case *llm.FunctionResponse:
-				jdata, err := json.Marshal(p.Content)
-				if err != nil {
-					jdata = []byte("{\"error\": \"RPCError: Failed to serialize response (HTTP 500)\"}")
-				}
-
-				contents = append(contents, openai.ChatCompletionMessage{
-					Role:       role,
-					Name:       p.Name,
-					Content:    string(jdata),
-					ToolCallID: p.ID,
-				})
-				continue L1
-			}
-
-			contents = append(contents, msg)
+	if len(coordContent.Parts) == 1 {
+		switch p := coordContent.Parts[0].(type) {
+		case llm.Text:
+			dst = append(dst, openai.ChatCompletionMessage{
+				Role:    role,
+				Content: string(p),
+			})
+			return dst, nil
 		}
 	}
 
-	return contents
+	var msg openai.ChatCompletionMessage
+	const (
+		stateTypeClean  = 0
+		stateTypeClient = 1
+		stateTypeServer = 2
+	)
+	state := stateTypeClean
+
+	flush := func() {
+		if state == stateTypeClean {
+			return
+		}
+		dst = append(dst, msg)
+		msg = openai.ChatCompletionMessage{}
+		state = stateTypeClean
+	}
+
+	for _, seg := range coordContent.Parts {
+		switch p := seg.(type) {
+		case llm.Text:
+			switch coordContent.Role {
+			case llm.RoleUser:
+				if state != stateTypeClean && state != stateTypeClient {
+					flush()
+				}
+				state = stateTypeClient
+			case llm.RoleModel:
+				if state != stateTypeClean && state != stateTypeServer {
+					flush()
+				}
+				state = stateTypeServer
+			default:
+				return dst, errInvalidContent
+			}
+
+			msg.Role = role
+			msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
+				Type: openai.ChatMessagePartTypeText,
+				Text: string(p),
+			})
+		case *llm.InlineData:
+			switch coordContent.Role {
+			case llm.RoleUser:
+				if state != stateTypeClean && state != stateTypeClient {
+					flush()
+				}
+				state = stateTypeClient
+			default:
+				return dst, errInvalidContent
+			}
+
+			msg.Role = role
+			msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
+				Type: openai.ChatMessagePartTypeImageURL,
+				Text: "data:" + p.MIMEType + ";base64," + base64.URLEncoding.EncodeToString(p.Data),
+			})
+		case *llm.FileData:
+			switch coordContent.Role {
+			case llm.RoleUser:
+				if state != stateTypeClean && state != stateTypeClient {
+					flush()
+				}
+				state = stateTypeClient
+			default:
+				return dst, errInvalidContent
+			}
+
+			msg.Role = role
+			msg.MultiContent = append(msg.MultiContent, openai.ChatMessagePart{
+				Type: openai.ChatMessagePartTypeImageURL,
+				Text: p.FileURI,
+			})
+		case *llm.FunctionCall:
+			switch coordContent.Role {
+			case llm.RoleModel:
+				if state != stateTypeClean && state != stateTypeServer {
+					flush()
+				}
+				state = stateTypeServer
+			default:
+				return dst, errInvalidContent
+			}
+
+			jsonData, err := json.Marshal(p.Args)
+			if err != nil {
+				jsonData = []byte("{\"error\": \"RPCError: Failed to marshal the args (HTTP 500)\"}")
+			}
+
+			msg.Role = role
+			msg.ToolCalls = append(msg.ToolCalls, openai.ToolCall{
+				Type: openai.ToolTypeFunction,
+				ID:   p.ID,
+				Function: openai.FunctionCall{
+					Name:      p.Name,
+					Arguments: string(jsonData),
+				},
+			})
+		case *llm.FunctionResponse:
+			switch coordContent.Role {
+			case llm.RoleFunc:
+				if state != stateTypeClean {
+					flush()
+				}
+				state = stateTypeClient
+			default:
+				return dst, errInvalidContent
+			}
+
+			jsonData, err := json.Marshal(p.Content)
+			if err != nil {
+				jsonData = []byte("{\"error\": \"RPCError: Failed to serialize response (HTTP 500)\"}")
+			}
+
+			msg.Role = role
+			msg.ToolCallID = p.ID
+			msg.Content = string(jsonData)
+		}
+	}
+
+	flush()
+
+	return dst, nil
 }
 
-func convertFunctionDeclarationOpenAI(f *llm.FunctionDeclaration) *openai.FunctionDefinition {
+func convertContextCoord2OpenAI(ctx *llm.ChatContext, prompt ...*llm.Content) ([]openai.ChatCompletionMessage, error) {
+	var dst []openai.ChatCompletionMessage
+	var err error
+
+	if ctx != nil {
+		for _, c := range ctx.Contents {
+			dst, err = convertContentCoord2OpenAI(dst, c)
+			if err != nil {
+				return dst, err
+			}
+		}
+	}
+
+	for _, p := range prompt {
+		dst, err = convertContentCoord2OpenAI(dst, p)
+		if err != nil {
+			return dst, err
+		}
+	}
+
+	return dst, nil
+}
+
+func convertFunctionCoord2OpenAI(f *llm.FunctionDeclaration) *openai.FunctionDefinition {
 	return &openai.FunctionDefinition{
 		Name:        f.Name,
 		Description: f.Description,
-		Parameters:  convertSchemaOpenAI(f.Schema, nil),
+		Parameters:  convertSchemaCoord2OpenAI(f.Schema, nil),
 	}
 }
 
-func convTypeOpenAI(t llm.OpenAPIType) jsonschema.DataType {
+func convTypeCoord2OpenAI(t llm.OpenAPIType) jsonschema.DataType {
 	switch t {
 	case llm.OpenAPITypeString:
 		return jsonschema.String
@@ -134,7 +232,7 @@ func convTypeOpenAI(t llm.OpenAPIType) jsonschema.DataType {
 	return jsonschema.Null
 }
 
-func convertSchemaOpenAI(s *llm.Schema, cache map[*llm.Schema]*jsonschema.Definition) *jsonschema.Definition {
+func convertSchemaCoord2OpenAI(s *llm.Schema, cache map[*llm.Schema]*jsonschema.Definition) *jsonschema.Definition {
 	if s == nil {
 		return nil
 	}
@@ -148,7 +246,7 @@ func convertSchemaOpenAI(s *llm.Schema, cache map[*llm.Schema]*jsonschema.Defini
 	}
 
 	schema := &jsonschema.Definition{
-		Type:        convTypeOpenAI(s.Type),
+		Type:        convTypeCoord2OpenAI(s.Type),
 		Description: s.Description,
 	}
 	cache[s] = schema
@@ -165,11 +263,11 @@ func convertSchemaOpenAI(s *llm.Schema, cache map[*llm.Schema]*jsonschema.Defini
 	case llm.OpenAPITypeInteger:
 	case llm.OpenAPITypeBoolean:
 	case llm.OpenAPITypeArray:
-		schema.Items = convertSchemaOpenAI(s.Items, cache)
+		schema.Items = convertSchemaCoord2OpenAI(s.Items, cache)
 	case llm.OpenAPITypeObject:
 		schema.Properties = make(map[string]jsonschema.Definition, len(s.Properties))
 		for k, v := range s.Properties {
-			schema.Properties[k] = *convertSchemaOpenAI(v, cache)
+			schema.Properties[k] = *convertSchemaCoord2OpenAI(v, cache)
 		}
 		schema.Required = s.Required
 	}
@@ -177,7 +275,18 @@ func convertSchemaOpenAI(s *llm.Schema, cache map[*llm.Schema]*jsonschema.Defini
 	return schema
 }
 
-func convertOpenAIContent(chat openai.ChatCompletionStreamChoiceDelta) (*llm.Content, error) {
+var (
+	errInvalidRole = errors.New("streamingOpenAI2CoordConverter: unknown role")
+)
+
+type streamingOpenAI2CoordConverter struct {
+	content   *llm.StreamContent
+	streamOut chan llm.Segment
+
+	pendingToolCalls []openai.ToolCall
+}
+
+func (g *streamingOpenAI2CoordConverter) feed(ctx context.Context, chat openai.ChatCompletionStreamChoiceDelta) error {
 	var role llm.Role
 	switch chat.Role {
 	case openai.ChatMessageRoleUser:
@@ -187,49 +296,122 @@ func convertOpenAIContent(chat openai.ChatCompletionStreamChoiceDelta) (*llm.Con
 	case openai.ChatMessageRoleTool:
 		role = llm.RoleFunc
 	default:
-		role = llm.RoleUser
+		return errInvalidRole
 	}
-
-	var parts []llm.Segment
+	g.content.Content.Role = role
 
 	if chat.Content != "" {
-		parts = append(parts, llm.Text(chat.Content))
+		seg := llm.Text(chat.Content)
+		g.content.Content.Parts = append(g.content.Content.Parts, seg)
+		select {
+		case g.streamOut <- seg:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	} else if len(chat.ToolCalls) > 0 {
 		for _, p := range chat.ToolCalls {
-			var args map[string]interface{}
-			err := json.Unmarshal([]byte(p.Function.Arguments), &args)
-			if err != nil {
-				return nil, err
+			index := -1
+			for i := range g.pendingToolCalls {
+				if g.pendingToolCalls[i].ID == p.ID {
+					index = i
+					break
+				}
 			}
 
-			parts = append(parts, &llm.FunctionCall{
-				Name: p.Function.Name,
-				ID:   p.ID,
-				Args: args,
-			})
+			if index == -1 {
+				if p.Index == nil {
+					// standalone tool call
+					seg := &llm.FunctionCall{
+						ID:   p.ID,
+						Name: p.Function.Name,
+					}
+
+					err := json.Unmarshal([]byte(p.Function.Arguments), &seg.Args)
+					if err != nil {
+						return err
+					}
+
+					select {
+					case g.streamOut <- seg:
+					case <-ctx.Done():
+						return ctx.Err()
+					}
+				} else {
+					// check if it is parsable as JSON
+					var args map[string]any
+					err := json.Unmarshal([]byte(p.Function.Arguments), &args)
+					if err == nil {
+						// dispatch tool call
+						seg := &llm.FunctionCall{
+							ID:   p.ID,
+							Name: p.Function.Name,
+							Args: args,
+						}
+
+						g.content.Content.Parts = append(g.content.Content.Parts, seg)
+						select {
+						case g.streamOut <- seg:
+						case <-ctx.Done():
+							return ctx.Err()
+						}
+					} else {
+						// store on pending list
+						g.pendingToolCalls = append(g.pendingToolCalls, p)
+					}
+				}
+				continue
+			}
+
+			g.pendingToolCalls[index].Function.Arguments += p.Function.Arguments
+
+			// check if it is parsable as JSON
+			var args map[string]any
+			err := json.Unmarshal([]byte(p.Function.Arguments), &args)
+			if err == nil {
+				// remove the tool call from pending list
+				g.pendingToolCalls = append(g.pendingToolCalls[:index], g.pendingToolCalls[index+1:]...)
+
+				// dispatch tool call
+				seg := &llm.FunctionCall{
+					ID:   p.ID,
+					Name: p.Function.Name,
+					Args: args,
+				}
+
+				g.content.Content.Parts = append(g.content.Content.Parts, seg)
+				select {
+				case g.streamOut <- seg:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+			}
 		}
 	}
 
-	return &llm.Content{
-		Role:  role,
-		Parts: parts,
-	}, nil
+	return nil
 }
 
 func (g *openAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext, input *llm.Content) *llm.StreamContent {
-	if chat == nil {
-		chat = &llm.ChatContext{}
+	contents, err := convertContextCoord2OpenAI(chat, input)
+	if err != nil {
+		stream := make(chan llm.Segment)
+		close(stream)
+		v := &llm.StreamContent{
+			Content: &llm.Content{},
+			Stream:  stream,
+			Err:     err,
+		}
+		return v
 	}
 
-	chat.Contents = append(chat.Contents, input)
-	contents := convertContextOpenAI(chat)
-	chat.Contents[len(chat.Contents)-1] = nil
-	chat.Contents = chat.Contents[:len(chat.Contents)-1]
-	var otools []openai.Tool = make([]openai.Tool, len(chat.Tools))
-	for i := range chat.Tools {
-		otools[i] = openai.Tool{
-			Type:     openai.ToolTypeFunction,
-			Function: convertFunctionDeclarationOpenAI(chat.Tools[i]),
+	var otools []openai.Tool
+	if chat != nil {
+		otools = make([]openai.Tool, len(chat.Tools))
+		for i := range chat.Tools {
+			otools[i] = openai.Tool{
+				Type:     openai.ToolTypeFunction,
+				Function: convertFunctionCoord2OpenAI(chat.Tools[i]),
+			}
 		}
 	}
 
@@ -240,11 +422,13 @@ func (g *openAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 		}}, contents...)
 	}
 
-	if chat.SystemInstruction != "" {
-		contents = append([]openai.ChatCompletionMessage{{
-			Role:    openai.ChatMessageRoleSystem,
-			Content: chat.SystemInstruction,
-		}}, contents...)
+	if chat != nil {
+		if chat.SystemInstruction != "" {
+			contents = append([]openai.ChatCompletionMessage{{
+				Role:    openai.ChatMessageRoleSystem,
+				Content: chat.SystemInstruction,
+			}}, contents...)
+		}
 	}
 
 	model_request := openai.ChatCompletionRequest{
@@ -283,6 +467,11 @@ func (g *openAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 	v := &llm.StreamContent{
 		Content: &llm.Content{},
 		Stream:  stream,
+	}
+
+	converter := &streamingOpenAI2CoordConverter{
+		content:   v,
+		streamOut: stream,
 	}
 
 	go func() {
@@ -330,20 +519,10 @@ func (g *openAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContext,
 					}
 				}
 
-				data, err := convertOpenAIContent(resp.Choices[0].Delta)
+				err := converter.feed(ctx, resp.Choices[0].Delta)
 				if err != nil {
 					v.Err = err
-					continue
-				}
-				v.Content.Role = data.Role
-				v.Content.Parts = append(v.Content.Parts, data.Parts...)
-
-				for i := range data.Parts {
-					select {
-					case stream <- data.Parts[i]:
-					case <-ctx.Done():
-						return
-					}
+					return
 				}
 			} else {
 				v.Err = llm.ErrNoResponse
