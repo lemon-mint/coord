@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+
 	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/internal/callid"
 	"github.com/lemon-mint/coord/internal/llmutils"
@@ -335,18 +336,23 @@ func (g *vertexAIModel) GenerateStream(ctx context.Context, chat *llm.ChatContex
 		model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(g.config.SystemInstruction + chat.SystemInstruction)}}
 	}
 
-	session := model.StartChat()
-	session.History = contents
-
 	if len(tools) > 0 {
 		model.Tools = []*genai.Tool{
 			{
 				FunctionDeclarations: tools,
 			},
 		}
+		model.ToolConfig = &genai.ToolConfig{
+			FunctionCallingConfig: &genai.FunctionCallingConfig{
+				Mode: genai.FunctionCallingAuto,
+			},
+		}
 	} else {
 		model.Tools = nil
 	}
+
+	session := model.StartChat()
+	session.History = contents
 
 	content := convertContentVertexAI(input)
 	resp := session.SendMessageStream(
