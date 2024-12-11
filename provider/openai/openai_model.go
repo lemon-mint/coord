@@ -275,30 +275,23 @@ func convertSchemaCoord2OpenAI(s *llm.Schema, cache map[*llm.Schema]*jsonschema.
 	return schema
 }
 
-var (
-	errInvalidRole = errors.New("streamingOpenAI2CoordConverter: unknown role")
-)
-
 type streamingOpenAI2CoordConverter struct {
 	content   *llm.StreamContent
 	streamOut chan llm.Segment
 
-	pendingToolCalls []openai.ToolCall
+	pendingToolCalls map[int]openai.ToolCall
 }
 
 func (g *streamingOpenAI2CoordConverter) feed(ctx context.Context, chat openai.ChatCompletionStreamChoiceDelta) error {
 	var role llm.Role
 	switch chat.Role {
 	case openai.ChatMessageRoleUser:
-		role = llm.RoleUser
+		g.content.Content.Role = llm.RoleUser
 	case openai.ChatMessageRoleAssistant:
-		role = llm.RoleModel
+		g.content.Content.Role = llm.RoleModel
 	case openai.ChatMessageRoleTool:
-		role = llm.RoleFunc
-	default:
-		return errInvalidRole
+		g.content.Content.Role = role
 	}
-	g.content.Content.Role = role
 
 	if chat.Content != "" {
 		seg := llm.Text(chat.Content)
@@ -310,81 +303,57 @@ func (g *streamingOpenAI2CoordConverter) feed(ctx context.Context, chat openai.C
 		}
 	} else if len(chat.ToolCalls) > 0 {
 		for _, p := range chat.ToolCalls {
-			index := -1
-			for i := range g.pendingToolCalls {
-				if g.pendingToolCalls[i].ID == p.ID {
-					index = i
-					break
-				}
+			if g.pendingToolCalls == nil {
+				g.pendingToolCalls = make(map[int]openai.ToolCall)
 			}
 
-			if index == -1 {
-				if p.Index == nil {
-					// standalone tool call
-					seg := &llm.FunctionCall{
-						ID:   p.ID,
-						Name: p.Function.Name,
-					}
-
-					err := json.Unmarshal([]byte(p.Function.Arguments), &seg.Args)
-					if err != nil {
-						return err
-					}
-
-					select {
-					case g.streamOut <- seg:
-					case <-ctx.Done():
-						return ctx.Err()
-					}
-				} else {
-					// check if it is parsable as JSON
-					var args map[string]any
-					err := json.Unmarshal([]byte(p.Function.Arguments), &args)
-					if err == nil {
-						// dispatch tool call
-						seg := &llm.FunctionCall{
-							ID:   p.ID,
-							Name: p.Function.Name,
-							Args: args,
-						}
-
-						g.content.Content.Parts = append(g.content.Content.Parts, seg)
-						select {
-						case g.streamOut <- seg:
-						case <-ctx.Done():
-							return ctx.Err()
-						}
-					} else {
-						// store on pending list
-						g.pendingToolCalls = append(g.pendingToolCalls, p)
-					}
-				}
-				continue
-			}
-
-			g.pendingToolCalls[index].Function.Arguments += p.Function.Arguments
-
-			// check if it is parsable as JSON
-			var args map[string]any
-			err := json.Unmarshal([]byte(p.Function.Arguments), &args)
-			if err == nil {
-				// remove the tool call from pending list
-				g.pendingToolCalls = append(g.pendingToolCalls[:index], g.pendingToolCalls[index+1:]...)
-
-				// dispatch tool call
+			if p.Index == nil {
+				// standalone tool call
 				seg := &llm.FunctionCall{
 					ID:   p.ID,
 					Name: p.Function.Name,
-					Args: args,
 				}
 
-				g.content.Content.Parts = append(g.content.Content.Parts, seg)
+				err := json.Unmarshal([]byte(p.Function.Arguments), &seg.Args)
+				if err != nil {
+					return err
+				}
+
 				select {
 				case g.streamOut <- seg:
 				case <-ctx.Done():
 					return ctx.Err()
 				}
+			} else {
+				prev, ok := g.pendingToolCalls[*p.Index]
+				if !ok {
+					prev = p
+					g.pendingToolCalls[*p.Index] = prev
+				} else {
+					prev.Function.Arguments += p.Function.Arguments
+					g.pendingToolCalls[*p.Index] = prev
+				}
+
+				// check if it is parsable as JSON
+				var args map[string]any
+				err := json.Unmarshal([]byte(prev.Function.Arguments), &args)
+				if err == nil {
+					// dispatch tool call
+					seg := &llm.FunctionCall{
+						ID:   prev.ID,
+						Name: prev.Function.Name,
+						Args: args,
+					}
+
+					g.content.Content.Parts = append(g.content.Content.Parts, seg)
+					select {
+					case g.streamOut <- seg:
+					case <-ctx.Done():
+						return ctx.Err()
+					}
+				}
 			}
+			continue
 		}
 	}
 
