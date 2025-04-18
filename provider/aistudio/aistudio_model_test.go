@@ -207,3 +207,39 @@ func TestAIStudioToolCall(t *testing.T) {
 		return
 	}
 }
+
+func TestAIStudioGenerateWithThinking(t *testing.T) {
+	client := getClient()
+	defer client.Close()
+
+	config := &llm.Config{
+		ThinkingConfig: &llm.ThinkingConfig{
+			ThinkingBudget: pconf.Ptrify(0),
+		},
+	}
+
+	model, err := client.NewLLM("gemini-2.5-flash-preview-04-17", config)
+	if err != nil {
+		panic(err)
+	}
+	defer model.Close()
+
+	output := model.GenerateStream(
+		context.Background(),
+		nil,
+		&llm.Content{
+			Role:  llm.RoleUser,
+			Parts: []llm.Segment{llm.Text("Do hamsters eat cats!")},
+		},
+	)
+
+	for segment := range output.Stream {
+		fmt.Print(segment)
+	}
+	fmt.Println()
+
+	if output.Err != nil {
+		t.Error(output.Err)
+		return
+	}
+}

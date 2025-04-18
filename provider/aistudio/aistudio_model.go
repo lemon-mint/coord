@@ -273,6 +273,16 @@ func (g *generativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 		config.SystemInstruction = &genai.Content{Parts: []*genai.Part{{Text: g.config.SystemInstruction + chat.SystemInstruction}}}
 	}
 
+	if g.config.ThinkingConfig != nil {
+		config.ThinkingConfig = &genai.ThinkingConfig{}
+		if g.config.ThinkingConfig.IncludeThoughts != nil {
+			config.ThinkingConfig.IncludeThoughts = *g.config.ThinkingConfig.IncludeThoughts
+		}
+		if g.config.ThinkingConfig.ThinkingBudget != nil {
+			config.ThinkingConfig.ThinkingBudget = ptrify(int32(*g.config.ThinkingConfig.ThinkingBudget))
+		}
+	}
+
 	stream := make(chan llm.Segment, 128)
 	v := &llm.StreamContent{
 		Content: &llm.Content{},
