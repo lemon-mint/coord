@@ -23,7 +23,7 @@ type Content struct {
 	Parts []Segment `json:"parts"`
 }
 
-//go:generate stringer -type=SegmentType -linecomment
+//go:generate go tool stringer -type=SegmentType -linecomment
 type SegmentType uint16
 
 const (
@@ -33,6 +33,7 @@ const (
 	SegmentTypeFileData                            // file_data
 	SegmentTypeFunctionCall                        // function_call
 	SegmentTypeFunctionResponse                    // function_response
+	SegmentTypeThinkingBlock                       // thinking_block
 )
 
 type Segment interface {
@@ -79,6 +80,15 @@ type FunctionResponse struct {
 
 func (*FunctionResponse) Segment()          {}
 func (*FunctionResponse) Type() SegmentType { return SegmentTypeFunctionResponse }
+
+type ThinkingBlock struct {
+	Redacted  bool   `json:"redacted,omitempty"`
+	Signature string `json:"signature,omitempty"`
+	Data      string `json:"content,omitempty"`
+}
+
+func (*ThinkingBlock) Segment()          {}
+func (*ThinkingBlock) Type() SegmentType { return SegmentTypeThinkingBlock }
 
 type FunctionDeclaration struct {
 	Name        string  `json:"name"`

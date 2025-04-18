@@ -1,10 +1,7 @@
 package anthropic
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -29,18 +26,27 @@ type anthropicMessage struct {
 type anthropicSegmentType string
 
 const (
-	anthropicSegmentText           anthropicSegmentType = "text"
-	anthropicSegmentTextDelta      anthropicSegmentType = "text_delta"
-	anthropicSegmentInputJSONDelta anthropicSegmentType = "input_json_delta"
-	anthropicSegmentImage          anthropicSegmentType = "image"
-	anthropicSegmentToolUse        anthropicSegmentType = "tool_use"
-	anthropicSegmentToolResult     anthropicSegmentType = "tool_result"
+	anthropicSegmentText             anthropicSegmentType = "text"
+	anthropicSegmentTextDelta        anthropicSegmentType = "text_delta"
+	anthropicSegmentThinking         anthropicSegmentType = "thinking"
+	anthropicSegmentRedactedThinking anthropicSegmentType = "redacted_thinking"
+	anthropicSegmentThinkingDelta    anthropicSegmentType = "thinking_delta"
+	anthropicSegmentSignatureDelta   anthropicSegmentType = "signature_delta"
+	anthropicSegmentInputJSONDelta   anthropicSegmentType = "input_json_delta"
+	anthropicSegmentImage            anthropicSegmentType = "image"
+	anthropicSegmentToolUse          anthropicSegmentType = "tool_use"
+	anthropicSegmentToolResult       anthropicSegmentType = "tool_result"
 )
 
 type anthropicSegment struct {
 	Type anthropicSegmentType `json:"type"` // "text", "image", "tool_use", "tool_result"
 
 	Text string `json:"text,omitempty"` // text content for text
+
+	Thinking  string `json:"thinking,omitempty"`  // thinking content for thinking
+	Signature string `json:"signature,omitempty"` // signature content for signature
+
+	RedactedThinking string `json:"redacted_thinking,omitempty"` // redacted thinking content for redacted_thinking
 
 	Source *anthropicFileData `json:"source,omitempty"` // file data for image
 
@@ -66,6 +72,11 @@ type anthropicTool struct {
 	InputSchema *llm.Schema `json:"input_schema"` // Input schema for the tool
 }
 
+type anthropicThinking struct {
+	Type         string `json:"type"`          // "enabled" or "disabled"
+	BudgetTokens int    `json:"budget_tokens"` // 16000
+}
+
 type anthropicCreateMessagesRequest struct {
 	AnthropicVersion string `json:"anthropic_version,omitempty"` // Anthropic API version
 
@@ -77,13 +88,15 @@ type anthropicCreateMessagesRequest struct {
 	MetaData      *anthropicCreateMessagesMetaData `json:"metadata,omitempty"`       // Metadata for the request
 	StopSequences []string                         `json:"stop_sequences,omitempty"` // List of stop sequences for the model
 
-	Tools []anthropicTool `json:"tools"` // List of tools to use in the conversation
+	Thinking *anthropicThinking `json:"thinking,omitempty"` // Thinking configuration
+	Tools    []anthropicTool    `json:"tools,omitempty"`    // List of tools to use in the conversation
 
 	Temperature *float32 `json:"temperature,omitempty"` // Temperature parameter for the model
 	TopP        *float32 `json:"top_p,omitempty"`       // Top-p parameter for the model
 	TopK        *int     `json:"top_k,omitempty"`       // Top-k parameter for the model
 
 	Stream bool `json:"stream"` // Stream responses
+
 }
 
 type anthropicCreateMessagesMetaData struct {
@@ -115,48 +128,6 @@ type anthropicCreateMessagesResponse struct {
 	StopReason   string             `json:"stop_reason,omitempty"`
 	Usage        *anthropicUsage    `json:"usage"`
 	Stream       bool               `json:"stream"`
-}
-
-func (c *anthropicAPIClient) createMessages(req *anthropicCreateMessagesRequest) (*anthropicCreateMessagesResponse, error) {
-	url, err := url.JoinPath(c.baseURL, "./messages")
-	if err != nil {
-		return nil, err
-	}
-
-	payload, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payload))
-	if err != nil {
-		return nil, err
-	}
-	r.Header.Set("Content-Type", "application/json")
-	if UserAgent != nil {
-		r.Header.Set("User-Agent", *UserAgent)
-	}
-
-	if err := c.authHandler(r); err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(r)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, getErrorByStatus(resp.StatusCode)
-	}
-
-	var mres anthropicCreateMessagesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&mres); err != nil {
-		return nil, err
-	}
-
-	return &mres, nil
 }
 
 var anthropicHTTPClient *http.Client = &http.Client{

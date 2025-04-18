@@ -15,7 +15,7 @@ var (
 	ErrNoResult          = errors.New("no result")           // This Error occurs when the model does not return any result.
 )
 
-//go:generate stringer -type=TaskType
+//go:generate go tool stringer -type=TaskType
 type TaskType uint16
 
 const (

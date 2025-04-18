@@ -14,11 +14,12 @@ func _() {
 	_ = x[SegmentTypeFileData-3]
 	_ = x[SegmentTypeFunctionCall-4]
 	_ = x[SegmentTypeFunctionResponse-5]
+	_ = x[SegmentTypeThinkingBlock-6]
 }
 
-const _SegmentType_name = "unknowntextinline_datafile_datafunction_callfunction_response"
+const _SegmentType_name = "unknowntextinline_datafile_datafunction_callfunction_responsethinking_block"
 
-var _SegmentType_index = [...]uint8{0, 7, 11, 22, 31, 44, 61}
+var _SegmentType_index = [...]uint8{0, 7, 11, 22, 31, 44, 61, 75}
 
 func (i SegmentType) String() string {
 	if i >= SegmentType(len(_SegmentType_index)-1) {

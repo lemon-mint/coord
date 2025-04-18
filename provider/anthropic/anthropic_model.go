@@ -81,6 +81,15 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 			model_request.MaxTokens = *g.config.MaxOutputTokens
 		}
 
+		if g.config.ThinkingConfig != nil {
+			if g.config.ThinkingConfig.ThinkingBudget != nil {
+				model_request.Thinking = &anthropicThinking{
+					Type:         "enabled",
+					BudgetTokens: *g.config.ThinkingConfig.ThinkingBudget,
+				}
+			}
+		}
+
 		payload, err := json.Marshal(model_request)
 		if err != nil {
 			v.Err = err
@@ -314,6 +323,23 @@ func (g *anthropicModel) GenerateStream(ctx context.Context, chat *llm.ChatConte
 						if len(c.InputJSON) > 0 {
 							response.Content[index].InputJSON = append(response.Content[index].InputJSON, c.InputJSON...)
 						}
+					case anthropicSegmentThinkingDelta:
+						if len(c.Thinking) > 0 {
+							response.Content[index].Thinking += c.Thinking
+							select {
+							case stream <- &llm.ThinkingBlock{
+								Redacted: false,
+								Data:     c.Thinking,
+							}:
+							case <-ctx.Done():
+								v.Err = ctx.Err()
+								return
+							}
+						}
+					case anthropicSegmentSignatureDelta:
+						if len(c.Signature) > 0 {
+							response.Content[index].Signature += c.Signature
+						}
 					default:
 						response.Content = append(response.Content, c)
 					}
@@ -391,6 +417,14 @@ func anthropicMapContent(content *fastjson.Value, c *anthropicSegment) {
 		c.Text = string(content.Get("text").GetStringBytes())
 	case anthropicSegmentTextDelta:
 		c.Text = string(content.Get("text").GetStringBytes())
+	case anthropicSegmentThinking:
+		c.Thinking = string(content.Get("thinking").GetStringBytes())
+	case anthropicSegmentThinkingDelta:
+		c.Thinking = string(content.Get("thinking").GetStringBytes())
+	case anthropicSegmentRedactedThinking:
+		c.RedactedThinking = string(content.Get("data").GetStringBytes())
+	case anthropicSegmentSignatureDelta:
+		c.Signature = string(content.Get("signature").GetStringBytes())
 	case anthropicSegmentImage:
 		c.Source.Type = string(content.Get("source", "type").GetStringBytes())
 		c.Source.MediaType = string(content.Get("source", "media_type").GetStringBytes())
@@ -446,6 +480,15 @@ func convertContentAnthropic(s *llm.Content) anthropicMessage {
 				a.IsError = true
 			}
 			a.Content = []anthropicSegment{{Type: anthropicSegmentText, Text: string(jsond)}}
+		case *llm.ThinkingBlock:
+			if v.Redacted {
+				a.Type = anthropicSegmentRedactedThinking
+				a.RedactedThinking = v.Data
+			} else {
+				a.Type = anthropicSegmentThinking
+				a.Thinking = v.Data
+				a.Signature = v.Signature
+			}
 		}
 
 		m.Content = append(m.Content, a)
@@ -478,6 +521,17 @@ L:
 				ID:   chat.Content[i].ID,
 				Name: chat.Content[i].Name,
 				Args: chat.Content[i].Input,
+			}
+		case anthropicSegmentRedactedThinking:
+			a = &llm.ThinkingBlock{
+				Redacted: true,
+				Data:     chat.Content[i].RedactedThinking,
+			}
+		case anthropicSegmentThinking:
+			a = &llm.ThinkingBlock{
+				Redacted:  false,
+				Data:      chat.Content[i].Thinking,
+				Signature: chat.Content[i].Signature,
 			}
 		default:
 			continue L
