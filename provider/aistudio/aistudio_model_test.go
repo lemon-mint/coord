@@ -36,7 +36,7 @@ func TestAIStudioGenerate(t *testing.T) {
 	client := getClient()
 	defer client.Close()
 
-	model, err := client.NewLLM("gemini-1.5-flash-latest", nil)
+	model, err := client.NewLLM("gemini-2.0-flash-001", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,7 @@ func TestAIStudioGenerate(t *testing.T) {
 
 	output := model.GenerateStream(
 		context.Background(),
-		&llm.ChatContext{},
+		nil,
 		&llm.Content{
 			Role:  llm.RoleUser,
 			Parts: []llm.Segment{llm.Text("Hello!")},
@@ -71,7 +71,7 @@ func TestAIStudioToolCall(t *testing.T) {
 	client := getClient()
 	defer client.Close()
 
-	model, err := client.NewLLM("gemini-1.5-flash-latest", nil)
+	model, err := client.NewLLM("gemini-2.0-flash-001", nil)
 	if err != nil {
 		panic(err)
 	}

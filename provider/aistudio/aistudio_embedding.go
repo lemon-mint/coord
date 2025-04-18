@@ -3,11 +3,11 @@ package aistudio
 import (
 	"context"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/lemon-mint/coord"
 	"github.com/lemon-mint/coord/embedding"
 	"github.com/lemon-mint/coord/pconf"
 	"github.com/lemon-mint/coord/provider"
+	"google.golang.org/genai"
 )
 
 var _ embedding.Model = (*textEmbedding)(nil)
@@ -20,36 +20,46 @@ type textEmbedding struct {
 }
 
 func (g *textEmbedding) TextEmbedding(ctx context.Context, text string, task embedding.TaskType) ([]float64, error) {
-	model := g.client.EmbeddingModel(g.model)
+	config := &genai.EmbedContentConfig{}
 
 	var err error
 
 	switch task {
 	case embedding.TaskTypeGeneral:
-		model.TaskType = genai.TaskTypeUnspecified
+		config.TaskType = ""
 	case embedding.TaskTypeSearchQuery:
-		model.TaskType = genai.TaskTypeRetrievalQuery
+		config.TaskType = "RETRIEVAL_QUERY"
 	case embedding.TaskTypeSearchDocument:
-		model.TaskType = genai.TaskTypeRetrievalDocument
+		config.TaskType = "RETRIEVAL_DOCUMENT"
 	case embedding.TaskTypeSemanticSimilarity:
-		model.TaskType = genai.TaskTypeSemanticSimilarity
+		config.TaskType = "SEMANTIC_SIMILARITY"
 	case embedding.TaskTypeClassification:
-		model.TaskType = genai.TaskTypeClassification
+		config.TaskType = "CLASSIFICATION"
 	case embedding.TaskTypeClustering:
-		model.TaskType = genai.TaskTypeClustering
+		config.TaskType = "CLUSTERING"
 	case embedding.TaskTypeQA:
-		model.TaskType = genai.TaskTypeQuestionAnswering
+		config.TaskType = "QUESTION_ANSWERING"
 	case embedding.TaskTypeFactVerification:
-		model.TaskType = genai.TaskTypeFactVerification
+		config.TaskType = "FACT_VERIFICATION"
 	default:
 		return nil, embedding.ErrUnsupported
 	}
 
-	response, err := model.EmbedContent(ctx, genai.Text(text))
+	response, err := g.client.Models.EmbedContent(ctx, g.model, []*genai.Content{
+		&genai.Content{
+			Role: genai.RoleUser,
+			Parts: []*genai.Part{
+				&genai.Part{
+					Text: text,
+				},
+			},
+		},
+	}, config)
 	if err != nil {
 		return nil, err
 	}
-	embeddings := response.Embedding.Values
+
+	embeddings := response.Embeddings[0].Values
 
 	if g.outputDim > 0 && len(embeddings) > g.outputDim {
 		embeddings = embeddings[:g.outputDim]
@@ -79,19 +89,10 @@ func (g *aiStudioClient) NewEmbedding(model string, config *embedding.Config) (e
 	return _em, nil
 }
 
-func (AIStudioProvider) NewEmbeddingClient(ctx context.Context, configs ...pconf.Config) (provider.EmbeddingClient, error) {
-	return (AIStudioProvider).newAIStudioClient(AIStudioProvider{}, ctx, configs...)
+func (g AIStudioProvider) NewEmbeddingClient(ctx context.Context, configs ...pconf.Config) (provider.EmbeddingClient, error) {
+	return g.newAIStudioClient(ctx, configs...)
 }
 
 func init() {
-	var exists bool
-	for _, n := range coord.ListEmbeddingProviders() {
-		if n == ProviderName {
-			exists = true
-			break
-		}
-	}
-	if !exists {
-		coord.RegisterEmbeddingProvider(ProviderName, Provider)
-	}
+	coord.RegisterEmbeddingProvider(ProviderName, Provider)
 }
