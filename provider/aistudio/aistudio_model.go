@@ -489,5 +489,14 @@ var _ provider.LLMProvider = Provider
 const ProviderName = "aistudio"
 
 func init() {
-	coord.RegisterLLMProvider(ProviderName, Provider)
+	var exists bool
+	for _, n := range coord.ListLLMProviders() {
+		if n == ProviderName {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		coord.RegisterLLMProvider(ProviderName, Provider)
+	}
 }

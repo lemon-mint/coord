@@ -94,5 +94,14 @@ func (g AIStudioProvider) NewEmbeddingClient(ctx context.Context, configs ...pco
 }
 
 func init() {
-	coord.RegisterEmbeddingProvider(ProviderName, Provider)
+	var exists bool
+	for _, n := range coord.ListEmbeddingProviders() {
+		if n == ProviderName {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		coord.RegisterEmbeddingProvider(ProviderName, Provider)
+	}
 }
