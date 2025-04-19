@@ -412,9 +412,9 @@ func unptrSlice[T any](v []*T) []T {
 }
 
 var defaultGenerativeLanguageConfig = &llm.Config{
-	Temperature:           ptrify(float32(0.4)),
-	MaxOutputTokens:       ptrify(2048),
-	SafetyFilterThreshold: llm.BlockOnlyHigh,
+	Temperature:           ptrify(float32(0.7)),
+	MaxOutputTokens:       ptrify(8192),
+	SafetyFilterThreshold: llm.BlockOff,
 }
 
 type generativeLanguageModel struct {
@@ -482,11 +482,12 @@ func (g AIStudioProvider) NewLLMClient(ctx context.Context, configs ...pconf.Con
 	return g.newAIStudioClient(ctx, configs...)
 }
 
-var Provider = AIStudioProvider{}
 var _ provider.EmbeddingProvider = Provider
 var _ provider.LLMProvider = Provider
 
 const ProviderName = "aistudio"
+
+var Provider AIStudioProvider
 
 func init() {
 	var exists bool

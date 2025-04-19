@@ -1,6 +1,7 @@
 package pconf
 
 import (
+	"cloud.google.com/go/auth"
 	"google.golang.org/api/option"
 )
 
@@ -50,19 +51,19 @@ func WithLocation(location string) Config {
 	}
 }
 
-func WithUseREST(useREST bool) Config {
+func WithGoogleCredentials(cred *auth.Credentials) Config {
 	return &fnConf{
 		func(g *GeneralConfig) error {
-			g.UseREST = useREST
+			g.GoogleCredentials = cred
 			return nil
 		},
 	}
 }
 
-func WithGoogleClientOptions(options ...option.ClientOption) Config {
+func WithGoogleClientOptions(opts ...option.ClientOption) Config {
 	return &fnConf{
 		func(g *GeneralConfig) error {
-			g.GoogleClientOptions = options
+			g.GoogleClientOptions = opts
 			return nil
 		},
 	}

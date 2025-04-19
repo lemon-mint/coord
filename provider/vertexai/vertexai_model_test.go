@@ -38,7 +38,7 @@ func TestVertexAIGenerate(t *testing.T) {
 	client := getClient()
 	defer client.Close()
 
-	model, err := client.NewLLM("gemini-1.5-flash-001", nil)
+	model, err := client.NewLLM("gemini-2.0-flash-001", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -73,7 +73,7 @@ func TestVertexAIToolCall(t *testing.T) {
 	client := getClient()
 	defer client.Close()
 
-	model, err := client.NewLLM("gemini-1.5-flash-001", nil)
+	model, err := client.NewLLM("gemini-2.0-flash-001", nil)
 	if err != nil {
 		panic(err)
 	}

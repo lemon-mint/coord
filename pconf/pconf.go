@@ -1,6 +1,9 @@
 package pconf
 
-import "google.golang.org/api/option"
+import (
+	"cloud.google.com/go/auth"
+	"google.golang.org/api/option"
+)
 
 type GeneralConfig struct {
 	APIKey  string
@@ -9,8 +12,7 @@ type GeneralConfig struct {
 	ProjectID string
 	Location  string
 
-	UseREST bool
-
+	GoogleCredentials   *auth.Credentials
 	GoogleClientOptions []option.ClientOption
 }
 
