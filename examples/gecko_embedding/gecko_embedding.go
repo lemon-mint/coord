@@ -48,7 +48,7 @@ func main() {
 	}
 	defer client.Close()
 
-	model, err := client.NewEmbedding("text-embedding-004", nil)
+	model, err := client.NewEmbedding("text-embedding-005", nil)
 	if err != nil {
 		panic(err)
 	}
