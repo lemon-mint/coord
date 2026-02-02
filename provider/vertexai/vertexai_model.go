@@ -281,6 +281,26 @@ func (g *generativeLanguageModel) GenerateStream(ctx context.Context, chat *llm.
 		if g.config.ThinkingConfig.ThinkingBudget != nil {
 			config.ThinkingConfig.ThinkingBudget = ptrify(int32(*g.config.ThinkingConfig.ThinkingBudget))
 		}
+		if g.config.ThinkingConfig.ThinkingLevel != nil {
+			var thinking_level genai.ThinkingLevel
+			switch *g.config.ThinkingConfig.ThinkingLevel {
+			case llm.ThinkingLevelDefault:
+				thinking_level = genai.ThinkingLevelUnspecified
+			case llm.ThinkingLevelMinimal:
+				thinking_level = genai.ThinkingLevelMinimal
+			case llm.ThinkingLevelLow:
+				thinking_level = genai.ThinkingLevelLow
+			case llm.ThinkingLevelMedium:
+				thinking_level = genai.ThinkingLevelMedium
+			case llm.ThinkingLevelHigh:
+				thinking_level = genai.ThinkingLevelHigh
+			case llm.ThinkingLevelExtraHigh:
+				thinking_level = genai.ThinkingLevelHigh
+			default:
+				thinking_level = genai.ThinkingLevelUnspecified
+			}
+			config.ThinkingConfig.ThinkingLevel = thinking_level
+		}
 	}
 
 	stream := make(chan llm.Segment, 128)

@@ -13,8 +13,9 @@ type Config struct {
 }
 
 type ThinkingConfig struct {
-	IncludeThoughts *bool `json:"include_thoughts,omitempty"`
-	ThinkingBudget  *int  `json:"thinking_budget,omitempty"`
+	IncludeThoughts *bool          `json:"include_thoughts,omitempty"`
+	ThinkingBudget  *int           `json:"thinking_budget,omitempty"`
+	ThinkingLevel   *ThinkingLevel `json:"thinking_level,omitempty"`
 }
 
 type BlockThreshold uint16
@@ -26,4 +27,15 @@ const (
 	BlockMediumAndAbove
 	BlockOnlyHigh
 	BlockOff
+)
+
+type ThinkingLevel uint16
+
+const (
+	ThinkingLevelDefault ThinkingLevel = iota
+	ThinkingLevelMinimal
+	ThinkingLevelLow
+	ThinkingLevelMedium
+	ThinkingLevelHigh
+	ThinkingLevelExtraHigh
 )
